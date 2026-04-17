@@ -1,0 +1,6 @@
+*.image
+*.changes
+*.sources
+*.ston
+pharo-local/
+.DS_Store
