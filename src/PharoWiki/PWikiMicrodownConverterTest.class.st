@@ -1,10 +1,10 @@
 Class {
-	#name : 'PWikiMicrodownConverterTest',
-	#superclass : 'TestCase',
-	#instVars : [ 'converter' ],
-	#category : 'PharoWiki-Tests',
-	#package : 'PharoWiki',
-	#tag : 'Tests'
+	#name : #PWikiMicrodownConverterTest,
+	#superclass : #TestCase,
+	#instVars : [
+		'converter'
+	],
+	#category : #'PharoWiki-Tests'
 }
 
 { #category : 'running' }

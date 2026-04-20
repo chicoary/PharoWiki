@@ -1,11 +1,10 @@
 Class {
-	#name : 'BaselineOfPharoWiki',
-	#superclass : 'BaselineOf',
-	#category : 'BaselineOfPharoWiki',
-	#package : 'BaselineOfPharoWiki'
+	#name : #BaselineOfPharoWiki,
+	#superclass : #BaselineOf,
+	#category : #BaselineOfPharoWiki
 }
 
-{ #category : 'baselines' }
+{ #category : #baselines }
 BaselineOfPharoWiki >> baseline: spec [
 	<baseline>
 	spec

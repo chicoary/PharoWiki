@@ -1,1 +1,1 @@
-{ #name : #BaselineOfPharoWiki }
+{ #name : 'BaselineOfPharoWiki' }

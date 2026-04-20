@@ -1,10 +1,10 @@
 Class {
-	#name : 'PWikiClassPage',
-	#superclass : 'Object',
-	#instVars : [ 'theClass' ],
-	#category : 'PharoWiki-Core',
-	#package : 'PharoWiki',
-	#tag : 'Core'
+	#name : #PWikiClassPage,
+	#superclass : #Object,
+	#instVars : [
+		'theClass'
+	],
+	#category : #'PharoWiki-Core'
 }
 
 { #category : 'instance creation' }

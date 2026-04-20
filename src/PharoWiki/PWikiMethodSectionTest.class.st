@@ -1,10 +1,10 @@
 Class {
-	#name : 'PWikiMethodSectionTest',
-	#superclass : 'TestCase',
-	#instVars : [ 'section' ],
-	#category : 'PharoWiki-Tests',
-	#package : 'PharoWiki',
-	#tag : 'Tests'
+	#name : #PWikiMethodSectionTest,
+	#superclass : #TestCase,
+	#instVars : [
+		'section'
+	],
+	#category : #'PharoWiki-Tests'
 }
 
 { #category : 'running' }

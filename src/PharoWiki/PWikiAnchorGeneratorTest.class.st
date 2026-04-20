@@ -1,10 +1,10 @@
 Class {
-	#name : 'PWikiAnchorGeneratorTest',
-	#superclass : 'TestCase',
-	#instVars : [ 'generator' ],
-	#category : 'PharoWiki-Tests',
-	#package : 'PharoWiki',
-	#tag : 'Tests'
+	#name : #PWikiAnchorGeneratorTest,
+	#superclass : #TestCase,
+	#instVars : [
+		'generator'
+	],
+	#category : #'PharoWiki-Tests'
 }
 
 { #category : 'running' }

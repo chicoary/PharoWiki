@@ -1,10 +1,10 @@
 Class {
-	#name : 'PWikiDependencyExtractorTest',
-	#superclass : 'TestCase',
-	#instVars : [ 'extractor' ],
-	#category : 'PharoWiki-Tests',
-	#package : 'PharoWiki',
-	#tag : 'Tests'
+	#name : #PWikiDependencyExtractorTest,
+	#superclass : #TestCase,
+	#instVars : [
+		'extractor'
+	],
+	#category : #'PharoWiki-Tests'
 }
 
 { #category : 'running' }

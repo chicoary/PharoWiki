@@ -1,20 +1,20 @@
 Class {
-	#name : 'PWikiClassPageTest',
-	#superclass : 'TestCase',
-	#instVars : [ 'page' ],
-	#category : 'PharoWiki-Tests',
-	#package : 'PharoWiki',
-	#tag : 'Tests'
+	#name : #PWikiClassPageTest,
+	#superclass : #TestCase,
+	#instVars : [
+		'page'
+	],
+	#category : #'PharoWiki-Tests'
 }
 
-{ #category : 'running' }
+{ #category : #running }
 PWikiClassPageTest >> setUp [
 	"Point is our canonical test class:
 	 small, well-known, clear protocols, stable across Pharo versions"
 	page := PWikiClassPage forClass: Point
 ]
 
-{ #category : 'tests - basic' }
+{ #category : #'tests - basic' }
 PWikiClassPageTest >> testClassName [
 	"Given a page for Point
 	 When asking for the class name
@@ -22,7 +22,7 @@ PWikiClassPageTest >> testClassName [
 	self assert: page className equals: 'Point'
 ]
 
-{ #category : 'tests - basic' }
+{ #category : #'tests - basic' }
 PWikiClassPageTest >> testSuperclassName [
 	"Given a page for Point
 	 When asking for the superclass name
@@ -30,7 +30,7 @@ PWikiClassPageTest >> testSuperclassName [
 	self assert: page superclassName equals: 'Object'
 ]
 
-{ #category : 'tests - basic' }
+{ #category : #'tests - basic' }
 PWikiClassPageTest >> testPackageName [
 	"Given a page for Point
 	 When asking for the package name
@@ -38,7 +38,7 @@ PWikiClassPageTest >> testPackageName [
 	self assert: page packageName equals: 'Kernel'
 ]
 
-{ #category : 'tests - basic' }
+{ #category : #'tests - basic' }
 PWikiClassPageTest >> testHasComment [
 	"Given a page for Point
 	 When checking the comment
@@ -46,7 +46,7 @@ PWikiClassPageTest >> testHasComment [
 	self assert: page hasComment
 ]
 
-{ #category : 'tests - protocols' }
+{ #category : #'tests - protocols' }
 PWikiClassPageTest >> testHasAccessingProtocol [
 	"Given a page for Point
 	 When listing protocol names
@@ -54,7 +54,7 @@ PWikiClassPageTest >> testHasAccessingProtocol [
 	self assert: (page protocolNames includes: 'accessing')
 ]
 
-{ #category : 'tests - protocols' }
+{ #category : #'tests - protocols' }
 PWikiClassPageTest >> testHasArithmeticProtocol [
 	"Given a page for Point
 	 When listing protocol names
@@ -62,7 +62,7 @@ PWikiClassPageTest >> testHasArithmeticProtocol [
 	self assert: (page protocolNames includes: 'arithmetic')
 ]
 
-{ #category : 'tests - protocols' }
+{ #category : #'tests - protocols' }
 PWikiClassPageTest >> testExtensionProtocolsExcludedFromMain [
 	"Given a page for Point
 	 When listing protocol names
@@ -70,7 +70,7 @@ PWikiClassPageTest >> testExtensionProtocolsExcludedFromMain [
 	self deny: (page protocolNames anySatisfy: [ :p | p beginsWith: '*' ])
 ]
 
-{ #category : 'tests - protocols' }
+{ #category : #'tests - protocols' }
 PWikiClassPageTest >> testAccessingProtocolContainsX [
 	"Given a page for Point
 	 When listing methods in 'accessing'
@@ -80,7 +80,7 @@ PWikiClassPageTest >> testAccessingProtocolContainsX [
 	self assert: (methods anySatisfy: [ :m | m selector = #x ])
 ]
 
-{ #category : 'tests - structure' }
+{ #category : #'tests - structure' }
 PWikiClassPageTest >> testHasInstanceVariables [
 	"Given a page for Point
 	 When listing instance variable names
@@ -89,18 +89,22 @@ PWikiClassPageTest >> testHasInstanceVariables [
 		includesAll: #('x' 'y')
 ]
 
-{ #category : 'tests - structure' }
+{ #category : #'tests - structure' }
 PWikiClassPageTest >> testHasSubclasses [
-	"Given a page for Point
+	"Given a page for Collection (which has many subclasses)
 	 When checking subclasses
 	 Then hasSubclasses is true"
-	self assert: page hasSubclasses
+	| collectionPage |
+	collectionPage := PWikiClassPage forClass: Collection.
+	self assert: collectionPage hasSubclasses
 ]
 
-{ #category : 'tests - structure' }
+{ #category : #'tests - structure' }
 PWikiClassPageTest >> testSubclassNamesAreStrings [
-	"Given a page for Point
+	"Given a page for Collection
 	 When listing subclass names
 	 Then all elements are strings"
-	self assert: (page subclassNames allSatisfy: [ :n | n isString ])
+	| collectionPage |
+	collectionPage := PWikiClassPage forClass: Collection.
+	self assert: (collectionPage subclassNames allSatisfy: [ :n | n isString ])
 ]
