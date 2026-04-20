@@ -50,28 +50,28 @@ PWikiGenerator >> renderPage: aPage [
 	| stream |
 	stream := WriteStream on: String new.
 	stream
-		nextPutAll: '# ', aPage className; nl.
+		nextPutAll: '# ', aPage className; cr.
 	stream
-		nextPutAll: '**Pacote:** `', aPage packageName, '`'; nl.
+		nextPutAll: '**Pacote:** `', aPage packageName, '`'; cr.
 	aPage superclassName ifNotEmpty: [ :s |
-		stream nextPutAll: '**Herda de:** [', s, '](', s, '.md)'; nl ].
+		stream nextPutAll: '**Herda de:** [', s, '](', s, '.md)'; cr ].
 	aPage hasComment ifTrue: [
-		stream nl;
-		nextPutAll: '## Comentário'; nl;
-		nextPutAll: (converter convert: aPage comment); nl ].
+		stream cr;
+		nextPutAll: '## Comentário'; cr;
+		nextPutAll: (converter convert: aPage comment); cr ].
 	aPage protocolNames do: [ :protocol |
 		| methods |
 		methods := aPage methodsInProtocol: protocol.
 		methods ifNotEmpty: [
-			stream nl;
-			nextPutAll: '## ', protocol; nl.
+			stream cr;
+			nextPutAll: '## ', protocol; cr.
 			methods do: [ :method |
 				| section |
 				section := PWikiMethodSection forMethod: method.
 				stream
-					nextPutAll: '### ', section selector; nl;
-					nextPutAll: '```smalltalk'; nl;
-					nextPutAll: section sourceCode; nl;
-					nextPutAll: '```'; nl ] ] ].
+					nextPutAll: '### ', section selector; cr;
+					nextPutAll: '```smalltalk'; cr;
+					nextPutAll: section sourceCode; cr;
+					nextPutAll: '```'; cr ] ] ].
 	^ stream contents
 ]
