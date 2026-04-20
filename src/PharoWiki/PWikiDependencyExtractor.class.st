@@ -20,22 +20,14 @@ PWikiDependencyExtractor >> dependenciesOf: aClass [
 				(Smalltalk globals includesKey: name asSymbol) ifTrue: [
 					(Smalltalk globals at: name asSymbol) isClass ifTrue: [
 						deps add: name ] ] ] ] ].
-	^ deps asArray removeDuplicates
+	^ deps asSet asArray
 ]
 
 { #category : #extracting }
 PWikiDependencyExtractor >> usersOf: aClass [
-	"Answer the names of classes that reference aClass in their methods."
-	| users className |
-	users := OrderedCollection new.
-	className := aClass name.
-	Smalltalk allClasses do: [ :each |
-		(each ~= aClass) ifTrue: [
-			each methods do: [ :method |
-				method ast allChildren do: [ :node |
-					(node isVariable and: [
-						node isGlobalVariable and: [
-							node name = className ] ]) ifTrue: [
-						users add: each name ] ] ] ] ].
-	^ users asArray removeDuplicates
+	"Answer the names of classes that reference aClass in their methods.
+	 Uses SystemNavigation for efficiency — much faster than scanning all classes."
+	| refs |
+	refs := SystemNavigation default allReferencesTo: aClass binding.
+	^ (refs collect: [ :method | method methodClass name ]) asSet asArray
 ]
