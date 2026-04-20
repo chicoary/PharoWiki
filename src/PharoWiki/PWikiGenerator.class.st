@@ -18,7 +18,7 @@ PWikiGenerator class >> outputDir: aDirectory [
 PWikiGenerator >> initializeWith: aDirectory [
 	outputDir := aDirectory.
 	writer := PWikiFileWriter outputDir: aDirectory.
-	converter := PWikiMicrodownConverter new.
+	converter := PWikiMicrodownConverter new
 ]
 
 { #category : #generating }
@@ -37,7 +37,9 @@ PWikiGenerator >> generateForClass: aClass [
 PWikiGenerator >> generateForPackage: aPackageName [
 	"Generate wiki pages for all classes in the given package."
 	| package |
-	package := RPackageOrganizer default packageNamed: aPackageName ifAbsent: [ ^ self ].
+	package := PackageOrganizer default
+		packageNamed: aPackageName
+		ifAbsent: [ ^ self ].
 	package classes do: [ :aClass |
 		self generateForClass: aClass ]
 ]
