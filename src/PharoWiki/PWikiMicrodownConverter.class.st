@@ -27,7 +27,8 @@ PWikiMicrodownConverter >> convert: aString [
 PWikiMicrodownConverter >> convertCodeBlocks: aString [
 	"Add smalltalk language tag to fenced code blocks that have none.
 	 Processes line by line: opening fence (``` alone) gets the tag;
-	 closing fence (``` alone, inside a block) is left unchanged."
+	 closing fence (``` alone, inside a block) is left unchanged.
+	 Defensive: unclosed blocks at end of input are silently closed."
 	| lines result inBlock |
 	lines := aString lines.
 	result := WriteStream on: String new.
@@ -45,6 +46,7 @@ PWikiMicrodownConverter >> convertCodeBlocks: aString [
 							inBlock := true ] ]
 				ifFalse: [ result nextPutAll: line ] ]
 		separatedBy: [ result cr ].
+	inBlock ifTrue: [ result cr; nextPutAll: '```' ].
 	^ result contents
 ]
 

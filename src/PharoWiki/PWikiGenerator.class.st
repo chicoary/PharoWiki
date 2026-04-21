@@ -58,7 +58,7 @@ PWikiGenerator >> generateForImage [
 	allClasses := Smalltalk allClasses asArray.
 	[ :outerJob |
 		outerJob
-			title: 'PharoWiki — gerando imagem completa';
+			title: 'PharoWiki — generating full image';
 			min: 0;
 			max: allClasses size.
 		self
@@ -77,7 +77,7 @@ PWikiGenerator >> generateForPackageNamed: aPackageName [
 	classes := package classes asArray.
 	[ :outerJob |
 		outerJob
-			title: 'PharoWiki — pacote ', aPackageName;
+			title: 'PharoWiki — package ', aPackageName;
 			min: 0;
 			max: classes size.
 		self
@@ -103,7 +103,7 @@ PWikiGenerator >> generateClasses: anArrayOfClasses outerJob: outerJob [
 	byPackage keysAndValuesDo: [ :pkgName :classes |
 		[ :pkgJob |
 			pkgJob
-				title: 'Pacote: ', pkgName;
+				title: 'Package: ', pkgName;
 				min: 0;
 				max: classes size.
 			classes doWithIndex: [ :aClass :i |
@@ -113,7 +113,7 @@ PWikiGenerator >> generateClasses: anArrayOfClasses outerJob: outerJob [
 						title: aClass name;
 						min: 0;
 						max: (aClass protocols size max: 1).
-					self generateForClass: aClass classJob: classJob.
+					self generateForClass: aClass classJob: classJob
 				] asJob run.
 				counter := counter + 1.
 				outerJob currentValue: counter ]
@@ -138,7 +138,6 @@ PWikiGenerator >> renderPage: aPage [
 	^ self renderPage: aPage classJob: nil
 ]
 
-
 { #category : 'rendering' }
 PWikiGenerator >> renderPage: aPage classJob: classJobOrNil [
 	"Render a PWikiClassPage as a Markdown string.
@@ -148,9 +147,9 @@ PWikiGenerator >> renderPage: aPage classJob: classJobOrNil [
 	protocolIndex := 0.
 
 	stream nextPutAll: '# ', aPage className; cr.
-	stream nextPutAll: '**Pacote:** `', aPage packageName, '`'; cr.
+	stream nextPutAll: '**Package:** `', aPage packageName, '`'; cr.
 	aPage superclassName ifNotEmpty: [ :s |
-		stream nextPutAll: '**Herda de:** [[', s, ']]'; cr ].
+		stream nextPutAll: '**Inherits from:** [[', s, ']]'; cr ].
 	aPage hasSubclasses ifTrue: [
 		stream nextPutAll: '**Subclasses:** '.
 		aPage subclassNames
@@ -159,7 +158,7 @@ PWikiGenerator >> renderPage: aPage classJob: classJobOrNil [
 		stream cr ].
 	aPage hasComment ifTrue: [
 		stream cr.
-		stream nextPutAll: '## Comentário'; cr.
+		stream nextPutAll: '## Comment'; cr.
 		stream nextPutAll: (converter convert: aPage comment); cr ].
 
 	aPage protocolNames do: [ :protocol |
@@ -175,7 +174,7 @@ PWikiGenerator >> renderPage: aPage classJob: classJobOrNil [
 				section := PWikiMethodSection forMethod: method.
 				stream nextPutAll: '### ', section selector; cr.
 				section sentMessages ifNotEmpty: [ :msgs |
-					stream nextPutAll: '**Envia:** `'.
+					stream nextPutAll: '**Sends:** `'.
 					stream nextPutAll: (', ' join: msgs).
 					stream nextPutAll: '`'; cr ].
 				stream nextPutAll: '```smalltalk'; cr.
@@ -184,7 +183,7 @@ PWikiGenerator >> renderPage: aPage classJob: classJobOrNil [
 
 	aPage extensionProtocolNames ifNotEmpty: [ :extProtos |
 		stream cr.
-		stream nextPutAll: '## Extensões'; cr.
+		stream nextPutAll: '## Extensions'; cr.
 		extProtos do: [ :protocol |
 			stream nextPutAll: '- `', protocol, '`'; cr ] ].
 
