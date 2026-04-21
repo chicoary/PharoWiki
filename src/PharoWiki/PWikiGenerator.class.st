@@ -19,6 +19,7 @@ PWikiGenerator class >> outputDir: aDirectory [
 { #category : 'initialization' }
 PWikiGenerator >> initializeWith: aDirectory [
 	outputDir := aDirectory.
+	outputDir exists ifFalse: [ outputDir ensureCreateDirectory ].
 	writer := PWikiFileWriter outputDir: aDirectory.
 	converter := PWikiMicrodownConverter new
 ]
