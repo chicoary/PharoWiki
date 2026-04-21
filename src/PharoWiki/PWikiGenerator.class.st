@@ -138,6 +138,7 @@ PWikiGenerator >> renderPage: aPage [
 	^ self renderPage: aPage classJob: nil
 ]
 
+
 { #category : 'rendering' }
 PWikiGenerator >> renderPage: aPage classJob: classJobOrNil [
 	"Render a PWikiClassPage as a Markdown string.
@@ -149,8 +150,7 @@ PWikiGenerator >> renderPage: aPage classJob: classJobOrNil [
 	stream nextPutAll: '# ', aPage className; cr.
 	stream nextPutAll: '**Pacote:** `', aPage packageName, '`'; cr.
 	aPage superclassName ifNotEmpty: [ :s |
-		stream nextPutAll: '**Herda de:** [', s, '](../'; cr.
-		stream nextPutAll: s, '.md)'; cr ].
+		stream nextPutAll: '**Herda de:** [', s, '](../', s, '.md)'; cr ].
 	aPage hasSubclasses ifTrue: [
 		stream nextPutAll: '**Subclasses:** '.
 		stream nextPutAll: (', ' join: (aPage subclassNames collect: [ :n |
