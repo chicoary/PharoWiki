@@ -4,21 +4,6 @@ Class {
 	#category : #'PharoWiki-Extractors'
 }
 
-{ #category : 'converting' }
-PWikiMicrodownConverter >> convert: aString [
-	"Convert all Microdown links in aString to Markdown links.
-	 Handles three forms:
-	   `#'PackageName'`       → [PackageName](../PackageName/index.md)
-	   `ClassName>>#selector` → [ClassName>>selector](ClassName.md#anchor)
-	   `ClassName`            → [ClassName](ClassName.md)
-	 Order matters: package and method links must be converted before class links."
-	| result |
-	result := self convertPackageLinks: aString.
-	result := self convertMethodLinks: result.
-	result := self convertClassLinks: result.
-	^ result
-]
-
 { #category : 'private' }
 PWikiMicrodownConverter >> convertPackageLinks: aString [
 	"Convert `#'PackageName'` → [PackageName](../PackageName/index.md)"
@@ -66,4 +51,32 @@ PWikiMicrodownConverter >> selectorToAnchor: aSelector [
 	"Convert a selector to a Markdown-safe anchor.
 	 Example: setX:setY: → setx-sety-"
 	^ aSelector asLowercase copyReplaceAll: ':' with: '-'
+]
+
+
+{ #category : 'private-converting' }
+PWikiMicrodownConverter >> convertCodeBlocks: aString [
+	"Add smalltalk language tag to fenced code blocks that have none."
+	| regex |
+	regex := ('```', String cr) asRegex.
+	^ regex
+		copy: aString
+		translatingMatchesUsing: [ :match | '```smalltalk', String cr ]
+]
+
+{ #category : 'converting' }
+PWikiMicrodownConverter >> convert: aString [
+	"Convert Microdown markup in aString to Markdown.
+	 Handles code blocks and three forms of links:
+	   fenced code blocks     → adds smalltalk language tag
+	   `#'PackageName'`       → [PackageName](../PackageName/index.md)
+	   `ClassName>>#selector` → [ClassName>>selector](ClassName.md#anchor)
+	   `ClassName`            → [ClassName](ClassName.md)
+	 Order matters: code blocks first, then package and method links before class links."
+	| result |
+	result := self convertCodeBlocks: aString.
+	result := self convertPackageLinks: result.
+	result := self convertMethodLinks: result.
+	result := self convertClassLinks: result.
+	^ result
 ]

@@ -69,3 +69,15 @@ PWikiMicrodownConverterTest >> testEmptyStringUnchanged [
 	 Then it returns an empty string"
 	self assert: (converter convert: '') equals: ''
 ]
+
+
+{ #category : 'tests - code blocks' }
+PWikiMicrodownConverterTest >> testCodeBlockGetsSmalltagLanguage [
+	"Given a fenced code block without language tag
+	 When converting
+	 Then it gets the smalltalk language tag"
+	| input result |
+	input := '```', String cr, 'x := 1.', String cr, '```'.
+	result := converter convert: input.
+	self assert: result equals: ('```smalltalk', String cr, 'x := 1.', String cr, '```')
+]
