@@ -1,10 +1,12 @@
 Class {
-	#name : #PWikiMicrodownConverterTest,
-	#superclass : #TestCase,
+	#name : 'PWikiMicrodownConverterTest',
+	#superclass : 'TestCase',
 	#instVars : [
 		'converter'
 	],
-	#category : #'PharoWiki-Tests'
+	#category : 'PharoWiki-Tests',
+	#package : 'PharoWiki',
+	#tag : 'Tests'
 }
 
 { #category : 'running' }
@@ -15,41 +17,41 @@ PWikiMicrodownConverterTest >> setUp [
 { #category : 'tests - class links' }
 PWikiMicrodownConverterTest >> testClassLinkConversion [
 	"Given a Microdown class reference `Point`
-	 When converting to Markdown
-	 Then it becomes a relative link to the class page"
+	 When converting to Obsidian wiki link
+	 Then it becomes [[Point]]"
 	| result |
 	result := converter convert: '`Point`'.
-	self assert: result equals: '[Point](Point.md)'
+	self assert: result equals: '[[Point]]'
 ]
 
 { #category : 'tests - class links' }
 PWikiMicrodownConverterTest >> testMethodLinkConversion [
 	"Given a Microdown method reference `Point>>#x`
-	 When converting to Markdown
-	 Then it becomes a relative link with anchor"
+	 When converting to Obsidian wiki link
+	 Then it becomes [[Point#x]]"
 	| result |
 	result := converter convert: '`Point>>#x`'.
-	self assert: result equals: '[Point>>x](Point.md#x)'
+	self assert: result equals: '[[Point#x]]'
 ]
 
 { #category : 'tests - class links' }
 PWikiMicrodownConverterTest >> testKeywordMethodLinkConversion [
 	"Given a Microdown method reference `Point>>#setX:setY:`
-	 When converting to Markdown
-	 Then colons in the anchor are replaced with dashes"
+	 When converting to Obsidian wiki link
+	 Then it becomes [[Point#setX:setY:]]"
 	| result |
 	result := converter convert: '`Point>>#setX:setY:`'.
-	self assert: result equals: '[Point>>setX:setY:](Point.md#setx-sety-)'
+	self assert: result equals: '[[Point#setX:setY:]]'
 ]
 
 { #category : 'tests - class links' }
 PWikiMicrodownConverterTest >> testPackageLinkConversion [
 	"Given a Microdown package reference `#'Kernel'`
-	 When converting to Markdown
-	 Then it becomes a relative link to the package index"
+	 When converting to Obsidian wiki link
+	 Then it becomes [[Kernel]]"
 	| result |
 	result := converter convert: '`#''Kernel''`'.
-	self assert: result equals: '[Kernel](../Kernel/index.md)'
+	self assert: result equals: '[[Kernel]]'
 ]
 
 { #category : 'tests - passthrough' }
@@ -70,12 +72,11 @@ PWikiMicrodownConverterTest >> testEmptyStringUnchanged [
 	self assert: (converter convert: '') equals: ''
 ]
 
-
 { #category : 'tests - code blocks' }
-PWikiMicrodownConverterTest >> testCodeBlockGetsSmalltagLanguage [
+PWikiMicrodownConverterTest >> testCodeBlockGetsSmalltalkLanguage [
 	"Given a fenced code block without language tag
 	 When converting
-	 Then it gets the smalltalk language tag"
+	 Then opening fence gets smalltalk tag and closing fence is unchanged"
 	| input result |
 	input := '```', String cr, 'x := 1.', String cr, '```'.
 	result := converter convert: input.

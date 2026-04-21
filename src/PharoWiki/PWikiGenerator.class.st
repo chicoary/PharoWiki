@@ -150,11 +150,12 @@ PWikiGenerator >> renderPage: aPage classJob: classJobOrNil [
 	stream nextPutAll: '# ', aPage className; cr.
 	stream nextPutAll: '**Pacote:** `', aPage packageName, '`'; cr.
 	aPage superclassName ifNotEmpty: [ :s |
-		stream nextPutAll: '**Herda de:** [', s, '](../', s, '.md)'; cr ].
+		stream nextPutAll: '**Herda de:** [[', s, ']]'; cr ].
 	aPage hasSubclasses ifTrue: [
 		stream nextPutAll: '**Subclasses:** '.
-		stream nextPutAll: (', ' join: (aPage subclassNames collect: [ :n |
-			'[', n, '](', n, '.md)' ])).
+		aPage subclassNames
+			do: [ :n | stream nextPutAll: '[[', n, ']]' ]
+			separatedBy: [ stream nextPutAll: ', ' ].
 		stream cr ].
 	aPage hasComment ifTrue: [
 		stream cr.
