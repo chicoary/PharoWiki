@@ -29,10 +29,10 @@ PWikiSelectorPage >> selector [
 
 { #category : 'accessing' }
 PWikiSelectorPage >> fileName [
-	"Answer the file name for this selector page.
-	 Colons are replaced with underscores for filesystem compatibility.
-	 Example: #ifTrue: → 'ifTrue_ implementors'"
-	^ (selector copyReplaceAll: ':' with: '_'), ' implementors'
+	"Answer the filesystem-safe file name for this selector page.
+	 Example: #ifTrue: → 'ifTrue_ implementors'
+	 Example: #* → '_asterisk_ implementors'"
+	^ (self selectorToFileName: selector), ' implementors'
 ]
 
 { #category : 'accessing' }
@@ -54,4 +54,26 @@ PWikiSelectorPage >> content [
 		link := '[[', className, '#', anchor, '|', className, '>>', selector, ']]'.
 		stream nextPutAll: '- ', link; cr ].
 	^ stream contents
+]
+
+{ #category : 'private' }
+PWikiSelectorPage >> selectorToFileName: aSelector [
+	"Convert a selector to a filesystem-safe name.
+	 Replaces Smalltalk special characters with descriptive names.
+	 Colons are replaced with underscores."
+	| result |
+	result := aSelector.
+	result := result copyReplaceAll: ':' with: '_'.
+	result := result copyReplaceAll: '*' with: '_asterisk_'.
+	result := result copyReplaceAll: '+' with: '_plus_'.
+	result := result copyReplaceAll: '-' with: '_minus_'.
+	result := result copyReplaceAll: '/' with: '_slash_'.
+	result := result copyReplaceAll: '\' with: '_backslash_'.
+	result := result copyReplaceAll: '@' with: '_at_'.
+	result := result copyReplaceAll: '<' with: '_lt_'.
+	result := result copyReplaceAll: '>' with: '_gt_'.
+	result := result copyReplaceAll: '=' with: '_eq_'.
+	result := result copyReplaceAll: '~' with: '_tilde_'.
+	result := result copyReplaceAll: ',' with: '_comma_'.
+	^ result
 ]

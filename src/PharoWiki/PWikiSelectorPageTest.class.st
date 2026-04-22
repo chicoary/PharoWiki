@@ -28,14 +28,6 @@ PWikiSelectorPageTest >> testSelector [
 ]
 
 { #category : 'tests - accessing' }
-PWikiSelectorPageTest >> testFileName [
-	"Given a page for #ifTrue:
-	 When asking the file name
-	 Then colons are replaced with underscores"
-	self assert: page fileName equals: 'ifTrue_ implementors'
-]
-
-{ #category : 'tests - accessing' }
 PWikiSelectorPageTest >> testTitle [
 	"Given a page for #ifTrue:
 	 When asking the title
@@ -69,4 +61,24 @@ PWikiSelectorPageTest >> testImplementorsSortedAlphabetically [
 	booleanPos := content indexOfSubCollection: '[[Boolean#ifTrue:'.
 	truePos := content indexOfSubCollection: '[[True#ifTrue:'.
 	self assert: booleanPos < truePos
+]
+
+{ #category : 'tests - accessing' }
+PWikiSelectorPageTest >> testFileName [
+	"Given a page for #ifTrue:
+	 When asking the file name
+	 Then colons are replaced with underscores"
+	self assert: page fileName equals: 'ifTrue_ implementors'
+]
+
+{ #category : 'tests - accessing' }
+PWikiSelectorPageTest >> testFileNameForBinarySelector [
+	"Given a page for a binary selector like #*
+	 When asking the file name
+	 Then special characters are replaced with descriptive names"
+	| binaryPage |
+	binaryPage := PWikiSelectorPage
+		selector: #*
+		implementors: (SystemNavigation default allImplementorsOf: #*).
+	self assert: binaryPage fileName equals: '_asterisk_ implementors'
 ]

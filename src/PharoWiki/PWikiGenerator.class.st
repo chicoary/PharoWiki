@@ -49,45 +49,6 @@ PWikiGenerator >> generateForPackage: aPackageName [
 		self generateForClass: aClass ]
 ]
 
-{ #category : 'generating - public' }
-PWikiGenerator >> generateForImage [
-	"Generate wiki pages for all classes in the image.
-	 Shows three nested progress bars:
-	   - outer : overall class count
-	   - middle : current package
-	   - inner  : protocols within the current class"
-	| allClasses |
-	allClasses := Smalltalk allClasses asArray.
-	[ :outerJob |
-		outerJob
-			title: 'PharoWiki — generating full image';
-			min: 0;
-			max: allClasses size.
-		self
-			generateClasses: allClasses
-			outerJob: outerJob
-	] asJob run
-]
-
-{ #category : 'generating - public' }
-PWikiGenerator >> generateForPackageNamed: aPackageName [
-	"Generate wiki pages for all classes in one package, with job feedback."
-	| package classes |
-	package := PackageOrganizer default
-		packageNamed: aPackageName
-		ifAbsent: [ ^ self ].
-	classes := package classes asArray.
-	[ :outerJob |
-		outerJob
-			title: 'PharoWiki — package ', aPackageName;
-			min: 0;
-			max: classes size.
-		self
-			generateClasses: classes
-			outerJob: outerJob
-	] asJob run
-]
-
 { #category : 'generating - private' }
 PWikiGenerator >> generateClasses: anArrayOfClasses outerJob: outerJob [
 	"Group anArrayOfClasses by package and process each group under a package-level Job."
@@ -208,4 +169,55 @@ PWikiGenerator >> renderPage: aPage classJob: classJobOrNil [
 			stream nextPutAll: '- `', protocol, '`'; cr ] ].
 
 	^ stream contents
+]
+
+{ #category : 'generating - private' }
+PWikiGenerator >> prepareImplementorsDir [
+	"Delete and recreate the _implementors directory.
+	 Called before bulk generation to ensure no stale files remain."
+	| implementorsDir |
+	implementorsDir := outputDir / '_implementors'.
+	implementorsDir exists ifTrue: [ implementorsDir deleteAll ].
+	implementorsDir createDirectory
+]
+
+{ #category : 'generating - public' }
+PWikiGenerator >> generateForImage [
+	"Generate wiki pages for all classes in the image.
+	 Shows three nested progress bars:
+	   - outer : overall class count
+	   - middle : current package
+	   - inner  : protocols within the current class"
+	| allClasses |
+	self prepareImplementorsDir.
+	allClasses := Smalltalk allClasses asArray.
+	[ :outerJob |
+		outerJob
+			title: 'PharoWiki — generating full image';
+			min: 0;
+			max: allClasses size.
+		self
+			generateClasses: allClasses
+			outerJob: outerJob
+	] asJob run
+]
+
+{ #category : 'generating - public' }
+PWikiGenerator >> generateForPackageNamed: aPackageName [
+	"Generate wiki pages for all classes in one package, with job feedback."
+	| package classes |
+	self prepareImplementorsDir.
+	package := PackageOrganizer default
+		packageNamed: aPackageName
+		ifAbsent: [ ^ self ].
+	classes := package classes asArray.
+	[ :outerJob |
+		outerJob
+			title: 'PharoWiki — package ', aPackageName;
+			min: 0;
+			max: classes size.
+		self
+			generateClasses: classes
+			outerJob: outerJob
+	] asJob run
 ]
