@@ -4,7 +4,8 @@ Class {
 	#instVars : [
 		'outputDir',
 		'writer',
-		'converter'
+		'converter',
+		'extractor'
 	],
 	#category : 'PharoWiki-Core',
 	#package : 'PharoWiki',
@@ -21,7 +22,8 @@ PWikiGenerator >> initializeWith: aDirectory [
 	outputDir := aDirectory.
 	outputDir exists ifFalse: [ outputDir ensureCreateDirectory ].
 	writer := PWikiFileWriter outputDir: aDirectory.
-	converter := PWikiMicrodownConverter new
+	converter := PWikiMicrodownConverter new.
+	extractor := PWikiDependencyExtractor new
 ]
 
 { #category : 'generating - public' }
@@ -132,6 +134,18 @@ PWikiGenerator >> generateForClass: aClass classJob: classJob [
 		content: content
 ]
 
+{ #category : 'generating - private' }
+PWikiGenerator >> generateSelectorPageFor: aSelector [
+	"Generate the implementors note for aSelector.
+	 Skips if the file already exists — handled by PWikiFileWriter."
+	| implementors selectorPage |
+	implementors := extractor implementorsOf: aSelector.
+	selectorPage := PWikiSelectorPage
+		selector: aSelector
+		implementors: implementors.
+	writer writeSelectorPage: selectorPage
+]
+
 { #category : 'rendering' }
 PWikiGenerator >> renderPage: aPage [
 	"Render a PWikiClassPage as a Markdown string (no job feedback)."
@@ -174,9 +188,15 @@ PWikiGenerator >> renderPage: aPage classJob: classJobOrNil [
 				section := PWikiMethodSection forMethod: method.
 				stream nextPutAll: '### ', section selector; cr.
 				section sentMessages ifNotEmpty: [ :msgs |
-					stream nextPutAll: '**Sends:** `'.
-					stream nextPutAll: (', ' join: msgs).
-					stream nextPutAll: '`'; cr ].
+					stream nextPutAll: '**Sends:** '.
+					msgs
+						do: [ :sel |
+							| fileName |
+							fileName := (sel copyReplaceAll: ':' with: '_'), ' implementors'.
+							stream nextPutAll: '[[', fileName, '|', sel, ']]'.
+							self generateSelectorPageFor: sel ]
+						separatedBy: [ stream nextPutAll: ', ' ].
+					stream cr ].
 				stream nextPutAll: '```smalltalk'; cr.
 				stream nextPutAll: section sourceCode; cr.
 				stream nextPutAll: '```'; cr ] ] ].

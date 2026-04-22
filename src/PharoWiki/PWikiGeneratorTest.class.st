@@ -45,16 +45,14 @@ PWikiGeneratorTest >> testGeneratedFileContainsClassName [
 	self assert: (content includesSubstring: 'Point')
 ]
 
-{ #category : #'tests - generation' }
+{ #category : 'tests - generation' }
 PWikiGeneratorTest >> testGenerateForPackage [
 	"Given the generator
-	 When generating for the package 'Kernel'
-	 Then multiple .md files are created"
-	| kernelDir |
-	generator generateForPackage: 'Kernel'.
-	kernelDir := outputDir / 'Kernel'.
-	self assert: kernelDir exists.
-	self assert: kernelDir children isNotEmpty
+	 When generating for the package 'Settings-Graphics'
+	 Then a .md file is created for its single class"
+	generator generateForPackage: 'Settings-Graphics'.
+	self assert: (outputDir / 'Settings-Graphics') exists.
+	self assert: (outputDir / 'Settings-Graphics') children isNotEmpty
 ]
 
 { #category : 'tests - rendering' }
