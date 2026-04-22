@@ -31,3 +31,9 @@ PWikiDependencyExtractor >> usersOf: aClass [
 	refs := SystemNavigation default allReferencesTo: aClass binding.
 	^ (refs collect: [ :method | method methodClass name ]) asSet asArray
 ]
+
+{ #category : 'extracting' }
+PWikiDependencyExtractor >> implementorsOf: aSelector [
+	"Answer the compiled methods that implement aSelector in the image."
+	^ SystemNavigation default allImplementorsOf: aSelector
+]

@@ -51,3 +51,23 @@ PWikiDependencyExtractorTest >> testDependenciesOfPointIncludesObject [
 	deps := extractor dependenciesOf: Point.
 	self assert: (deps includes: #Object)
 ]
+
+{ #category : 'tests - implementors' }
+PWikiDependencyExtractorTest >> testImplementorsOfIfTrueIncludesBoolean [
+	"Given the selector #ifTrue:
+	 When asking for implementors
+	 Then Boolean is among them"
+	| implementors |
+	implementors := extractor implementorsOf: #ifTrue:.
+	self assert: (implementors anySatisfy: [ :m | m methodClass name = 'Boolean' ])
+]
+
+{ #category : 'tests - implementors' }
+PWikiDependencyExtractorTest >> testImplementorsOfReturnsCompiledMethods [
+	"Given any selector
+	 When asking for implementors
+	 Then all results are CompiledMethods"
+	| implementors |
+	implementors := extractor implementorsOf: #printOn:.
+	self assert: (implementors allSatisfy: [ :m | m isKindOf: CompiledMethod ])
+]
