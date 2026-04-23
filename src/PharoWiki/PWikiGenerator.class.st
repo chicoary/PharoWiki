@@ -148,16 +148,18 @@ PWikiGenerator >> renderPage: aPage classJob: classJobOrNil [
 				| section |
 				section := PWikiMethodSection forMethod: method.
 				stream nextPutAll: '### ', section selector; cr.
+
 				section sentMessages ifNotEmpty: [ :msgs |
-					stream nextPutAll: '**Sends:** '.
-					msgs
-						do: [ :sel |
-							| fileName |
-							fileName := (sel copyReplaceAll: ':' with: '_'), ' implementors'.
-							stream nextPutAll: '[[', fileName, '|', sel, ']]'.
-							self generateSelectorPageFor: sel ]
-						separatedBy: [ stream nextPutAll: ', ' ].
-					stream cr ].
+    				stream nextPutAll: '**Sends:** '.
+    				msgs do: [ :sel |
+            			| fileName |
+            			fileName := (PWikiSelectorPage selectorToFileName: sel), ' implementors'.
+            			stream nextPutAll: '[[', fileName, '|', sel, ']]'.
+            			self generateSelectorPageFor: sel ]
+        			separatedBy: [ 
+						stream nextPutAll: ', ' ].
+    					stream cr ].
+
 				stream nextPutAll: '```smalltalk'; cr.
 				stream nextPutAll: section sourceCode; cr.
 				stream nextPutAll: '```'; cr ] ] ].
