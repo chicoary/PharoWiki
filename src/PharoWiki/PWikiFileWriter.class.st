@@ -34,15 +34,33 @@ PWikiFileWriter >> writeClass: aClassName package: aPackageName content: aString
 ]
 
 { #category : 'writing' }
-PWikiFileWriter >> writeSelectorPage: aSelectorPage [
-	"Write the implementors note for a selector to _implementors/.
-	 Creates the directory if it does not exist.
+PWikiFileWriter >> writeSelectorPage: aPage [
+	"Write a selector page to _implementors/.
 	 Skips writing if the file already exists — idempotent and I/O efficient."
-	| implementorsDir file |
-	implementorsDir := outputDir / '_implementors'.
-	implementorsDir exists ifFalse: [ implementorsDir createDirectory ].
-	file := implementorsDir / (aSelectorPage fileName, '.md').
+	self
+		writePage: aPage
+		toDirectory: '_implementors'
+]
+
+{ #category : 'writing' }
+PWikiFileWriter >> writeSenderPage: aPage [
+	"Write a sender page to _senders/.
+	 Skips writing if the file already exists — idempotent and I/O efficient."
+	self
+		writePage: aPage
+		toDirectory: '_senders'
+]
+
+{ #category : 'private' }
+PWikiFileWriter >> writePage: aPage toDirectory: aDirName [
+	"Write aPage content to aDirName/fileName.md under outputDir.
+	 Creates the directory if it does not exist.
+	 Skips writing if the file already exists."
+	| dir file |
+	dir := outputDir / aDirName.
+	dir exists ifFalse: [ dir createDirectory ].
+	file := dir / (aPage fileName, '.md').
 	file exists ifTrue: [ ^ self ].
 	file writeStreamDo: [ :stream |
-		stream nextPutAll: aSelectorPage content ]
+		stream nextPutAll: aPage content ]
 ]

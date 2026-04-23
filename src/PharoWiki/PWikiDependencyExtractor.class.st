@@ -1,10 +1,12 @@
 Class {
-	#name : #PWikiDependencyExtractor,
-	#superclass : #Object,
-	#category : #'PharoWiki-Extractors'
+	#name : 'PWikiDependencyExtractor',
+	#superclass : 'Object',
+	#category : 'PharoWiki-Extractors',
+	#package : 'PharoWiki',
+	#tag : 'Extractors'
 }
 
-{ #category : #extracting }
+{ #category : 'extracting' }
 PWikiDependencyExtractor >> dependenciesOf: aClass [
 	"Answer the names of classes that aClass depends on.
 	 Includes superclass, traits, and classes referenced in method ASTs."
@@ -23,7 +25,7 @@ PWikiDependencyExtractor >> dependenciesOf: aClass [
 	^ deps asSet asArray
 ]
 
-{ #category : #extracting }
+{ #category : 'extracting' }
 PWikiDependencyExtractor >> usersOf: aClass [
 	"Answer the names of classes that reference aClass in their methods.
 	 Uses SystemNavigation for efficiency — much faster than scanning all classes."
@@ -36,4 +38,10 @@ PWikiDependencyExtractor >> usersOf: aClass [
 PWikiDependencyExtractor >> implementorsOf: aSelector [
 	"Answer the compiled methods that implement aSelector in the image."
 	^ SystemNavigation default allImplementorsOf: aSelector
+]
+
+{ #category : 'extracting' }
+PWikiDependencyExtractor >> sendersOf: aSelector [
+	"Answer the compiled methods that send aSelector in the image."
+	^ SystemNavigation default allSendersOf: aSelector
 ]

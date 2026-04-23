@@ -49,6 +49,49 @@ PWikiGenerator >> generateForPackage: aPackageName [
 		self generateForClass: aClass ]
 ]
 
+{ #category : 'generating - public' }
+PWikiGenerator >> generateForImage [
+	"Generate wiki pages for all classes in the image.
+	 Shows three nested progress bars:
+	   - outer : overall class count
+	   - middle : current package
+	   - inner  : protocols within the current class"
+	| allClasses |
+	self prepareImplementorsDir.
+	self prepareSendersDir.
+	allClasses := Smalltalk allClasses asArray.
+	[ :outerJob |
+		outerJob
+			title: 'PharoWiki — generating full image';
+			min: 0;
+			max: allClasses size.
+		self
+			generateClasses: allClasses
+			outerJob: outerJob
+	] asJob run
+]
+
+{ #category : 'generating - public' }
+PWikiGenerator >> generateForPackageNamed: aPackageName [
+	"Generate wiki pages for all classes in one package, with job feedback."
+	| package classes |
+	self prepareImplementorsDir.
+	self prepareSendersDir.
+	package := PackageOrganizer default
+		packageNamed: aPackageName
+		ifAbsent: [ ^ self ].
+	classes := package classes asArray.
+	[ :outerJob |
+		outerJob
+			title: 'PharoWiki — package ', aPackageName;
+			min: 0;
+			max: classes size.
+		self
+			generateClasses: classes
+			outerJob: outerJob
+	] asJob run
+]
+
 { #category : 'generating - private' }
 PWikiGenerator >> generateClasses: anArrayOfClasses outerJob: outerJob [
 	"Group anArrayOfClasses by package and process each group under a package-level Job."
@@ -96,15 +139,47 @@ PWikiGenerator >> generateForClass: aClass classJob: classJob [
 ]
 
 { #category : 'generating - private' }
-PWikiGenerator >> generateSelectorPageFor: aSelector [
+PWikiGenerator >> generateImplementorsPageFor: aSelector [
 	"Generate the implementors note for aSelector.
 	 Skips if the file already exists — handled by PWikiFileWriter."
-	| implementors selectorPage |
+	| implementors page |
 	implementors := extractor implementorsOf: aSelector.
-	selectorPage := PWikiSelectorPage
+	page := PWikiImplementorsPage
 		selector: aSelector
 		implementors: implementors.
-	writer writeSelectorPage: selectorPage
+	writer writeSelectorPage: page
+]
+
+{ #category : 'generating - private' }
+PWikiGenerator >> generateSendersPageFor: aSelector [
+	"Generate the senders note for aSelector.
+	 Skips if the file already exists — handled by PWikiFileWriter."
+	| senders page |
+	senders := extractor sendersOf: aSelector.
+	page := PWikiSendersPage
+		selector: aSelector
+		senders: senders.
+	writer writeSenderPage: page
+]
+
+{ #category : 'generating - private' }
+PWikiGenerator >> prepareImplementorsDir [
+	"Delete and recreate the _implementors directory.
+	 Called before bulk generation to ensure no stale files remain."
+	| dir |
+	dir := outputDir / '_implementors'.
+	dir exists ifTrue: [ dir deleteAll ].
+	dir createDirectory
+]
+
+{ #category : 'generating - private' }
+PWikiGenerator >> prepareSendersDir [
+	"Delete and recreate the _senders directory.
+	 Called before bulk generation to ensure no stale files remain."
+	| dir |
+	dir := outputDir / '_senders'.
+	dir exists ifTrue: [ dir deleteAll ].
+	dir createDirectory
 ]
 
 { #category : 'rendering' }
@@ -153,11 +228,13 @@ PWikiGenerator >> renderPage: aPage classJob: classJobOrNil [
 					msgs
 						do: [ :sel |
 							| fileName |
-							fileName := (PWikiSelectorPage selectorToFileName: sel), ' implementors'.
+							fileName := (PWikiSelectorPageBase selectorToFileName: sel), ' implementors'.
 							stream nextPutAll: '[[', fileName, '|', sel, ']]'.
-							self generateSelectorPageFor: sel ]
+							self generateImplementorsPageFor: sel ]
 						separatedBy: [ stream nextPutAll: ', ' ].
 					stream cr ].
+				stream nextPutAll: '[[', (PWikiSelectorPageBase selectorToFileName: section selector), ' senders|Senders]]'; cr.
+				self generateSendersPageFor: section selector.
 				stream nextPutAll: '```smalltalk'; cr.
 				stream nextPutAll: section sourceCode; cr.
 				stream nextPutAll: '```'; cr ] ] ].
@@ -169,55 +246,4 @@ PWikiGenerator >> renderPage: aPage classJob: classJobOrNil [
 			stream nextPutAll: '- `', protocol, '`'; cr ] ].
 
 	^ stream contents
-]
-
-{ #category : 'generating - private' }
-PWikiGenerator >> prepareImplementorsDir [
-	"Delete and recreate the _implementors directory.
-	 Called before bulk generation to ensure no stale files remain."
-	| implementorsDir |
-	implementorsDir := outputDir / '_implementors'.
-	implementorsDir exists ifTrue: [ implementorsDir deleteAll ].
-	implementorsDir createDirectory
-]
-
-{ #category : 'generating - public' }
-PWikiGenerator >> generateForImage [
-	"Generate wiki pages for all classes in the image.
-	 Shows three nested progress bars:
-	   - outer : overall class count
-	   - middle : current package
-	   - inner  : protocols within the current class"
-	| allClasses |
-	self prepareImplementorsDir.
-	allClasses := Smalltalk allClasses asArray.
-	[ :outerJob |
-		outerJob
-			title: 'PharoWiki — generating full image';
-			min: 0;
-			max: allClasses size.
-		self
-			generateClasses: allClasses
-			outerJob: outerJob
-	] asJob run
-]
-
-{ #category : 'generating - public' }
-PWikiGenerator >> generateForPackageNamed: aPackageName [
-	"Generate wiki pages for all classes in one package, with job feedback."
-	| package classes |
-	self prepareImplementorsDir.
-	package := PackageOrganizer default
-		packageNamed: aPackageName
-		ifAbsent: [ ^ self ].
-	classes := package classes asArray.
-	[ :outerJob |
-		outerJob
-			title: 'PharoWiki — package ', aPackageName;
-			min: 0;
-			max: classes size.
-		self
-			generateClasses: classes
-			outerJob: outerJob
-	] asJob run
 ]

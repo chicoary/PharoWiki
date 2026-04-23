@@ -28,7 +28,7 @@ PWikiSelectorPage >> selector [
 ]
 
 { #category : 'accessing' }
-PWikiSelectorPage >> fileName [
+PWikiSelectorPage >> fileNameDELETE [
 	"Answer the filesystem-safe file name for this selector page.
 	 Example: #ifTrue: → 'ifTrue_ implementors'
 	 Example: #* → '_asterisk_ implementors'"
@@ -57,7 +57,7 @@ PWikiSelectorPage >> content [
 ]
 
 { #category : 'private' }
-PWikiSelectorPage class >> selectorToFileName: aSelector [
+PWikiSelectorPage class >> selectorToFileNameDELETE: aSelector [
 	"Convert a selector to a filesystem-safe name.
 	 Replaces Smalltalk special characters with descriptive names.
 	 Colons are replaced with underscores."
