@@ -7,7 +7,7 @@
 
 ## Visão geral
 
-Wiki navegável gerada a partir do código-fonte do Pharo Smalltalk, inspirada na abordagem de Karpathy com Obsidian + Claude Code. O gerador usa reflexão da imagem Pharo para produzir arquivos `.md` por classe, organizados por pacote.
+Wiki navegável gerada a partir do código-fonte do Pharo Smalltalk, inspirada na abordagem de Karpathy com Obsidian + Claude Code. O gerador usa reflexão da imagem Pharo para produzir arquivos `.md` por classe, organizados por pacote, com links navegáveis no formato Obsidian.
 
 ---
 
@@ -24,38 +24,7 @@ Wiki navegável gerada a partir do código-fonte do Pharo Smalltalk, inspirada n
 - **Pharo:** 13 (última versão estável)
 - **Hardware:** Apple M4, macOS Sequoia 15.5
 - **Ingestão:** `tonel://` via Metacello no Playground
-
-### Script de ingestão
-
-```smalltalk
-| pharoWikiPath |
-pharoWikiPath := '/Users/chicoary/Documents/Obsidian Vaults/CODE Vault/1 - Projetos/1 - In progress/PharoWiki/Anexos/PharoWiki'.
-
-Metacello new
-    baseline: 'PharoWiki';
-    repository: 'tonel://', pharoWikiPath, '/src';
-    load.
-```
-
-### Script de testes
-
-```smalltalk
-| result suite |
-suite := TestSuite new.
-suite addTest: PWikiClassPageTest suite.
-suite addTest: PWikiMethodSectionTest suite.
-suite addTest: PWikiMicrodownConverterTest suite.
-suite addTest: PWikiAnchorGeneratorTest suite.
-suite addTest: PWikiDependencyExtractorTest suite.
-suite addTest: PWikiFileWriterTest suite.
-suite addTest: PWikiGeneratorTest suite.
-result := suite run.
-
-Transcript
-    show: result passed size printString, ' passaram'; cr;
-    show: result failures size printString, ' falharam'; cr;
-    show: result errors size printString, ' erros'; cr.
-```
+- **Scripts:** ver `scripts.md` na raiz do repositório
 
 ---
 
@@ -65,27 +34,34 @@ Transcript
 PharoWiki/
 ├── .gitignore
 ├── README.md
-├── load-pharowiki.st
+├── CONVENTIONS.md
+├── PHAROWIKI_CONTEXT.md
+├── scripts.md
 └── src/
     ├── BaselineOfPharoWiki/
     │   ├── package.st
     │   └── BaselineOfPharoWiki.class.st
     └── PharoWiki/
         ├── package.st
-        ├── PWikiClassPage.class.st          (tag: Core)
-        ├── PWikiMethodSection.class.st      (tag: Core)
-        ├── PWikiGenerator.class.st          (tag: Core)
-        ├── PWikiMicrodownConverter.class.st (tag: Extractors)
-        ├── PWikiAnchorGenerator.class.st    (tag: Extractors)
-        ├── PWikiDependencyExtractor.class.st(tag: Extractors)
-        ├── PWikiFileWriter.class.st         (tag: Writers)
-        ├── PWikiClassPageTest.class.st      (tag: Tests)
-        ├── PWikiMethodSection.class.st      (tag: Tests)
+        ├── PWikiClassPage.class.st              (tag: Core)
+        ├── PWikiMethodSection.class.st          (tag: Core)
+        ├── PWikiGenerator.class.st              (tag: Core)
+        ├── PWikiSelectorPageBase.class.st       (tag: Core)
+        ├── PWikiImplementorsPage.class.st       (tag: Core)
+        ├── PWikiSendersPage.class.st            (tag: Core)
+        ├── PWikiMicrodownConverter.class.st     (tag: Extractors)
+        ├── PWikiAnchorGenerator.class.st        (tag: Extractors)
+        ├── PWikiDependencyExtractor.class.st    (tag: Extractors)
+        ├── PWikiFileWriter.class.st             (tag: Writers)
+        ├── PWikiClassPageTest.class.st          (tag: Tests)
+        ├── PWikiMethodSectionTest.class.st      (tag: Tests)
         ├── PWikiMicrodownConverterTest.class.st (tag: Tests)
         ├── PWikiAnchorGeneratorTest.class.st    (tag: Tests)
         ├── PWikiDependencyExtractorTest.class.st(tag: Tests)
         ├── PWikiFileWriterTest.class.st         (tag: Tests)
-        └── PWikiGeneratorTest.class.st          (tag: Tests)
+        ├── PWikiGeneratorTest.class.st          (tag: Tests)
+        ├── PWikiImplementorsPageTest.class.st   (tag: Tests)
+        └── PWikiSendersPageTest.class.st        (tag: Tests)
 ```
 
 ---
@@ -99,42 +75,29 @@ PharoWiki/
 | `PWikiClassPage` | Introspecção de uma classe via reflexão da imagem |
 | `PWikiMethodSection` | Encapsula um método compilado + acesso à AST |
 | `PWikiGenerator` | Orquestra a geração — entry point principal |
+| `PWikiSelectorPageBase` | Classe abstrata — base para páginas de seletor |
+| `PWikiImplementorsPage` | Gera nota `_implementors/` com quem implementa um seletor |
+| `PWikiSendersPage` | Gera nota `_senders/` com quem envia um seletor |
 
 ### Extractors
 
 | Classe | Responsabilidade |
 |--------|-----------------|
-| `PWikiMicrodownConverter` | Converte links Microdown → Markdown |
+| `PWikiMicrodownConverter` | Converte links Microdown → formato Obsidian |
 | `PWikiAnchorGenerator` | Gera e resolve âncoras entre páginas |
-| `PWikiDependencyExtractor` | Extrai dependências via `SystemNavigation` |
+| `PWikiDependencyExtractor` | `implementorsOf:`, `sendersOf:`, `usersOf:`, `dependenciesOf:` |
 
 ### Writers
 
 | Classe | Responsabilidade |
 |--------|-----------------|
-| `PWikiFileWriter` | Escreve arquivos `.md` no sistema de arquivos |
+| `PWikiFileWriter` | Escreve `.md` no sistema de arquivos — `writeClass:package:content:`, `writeSelectorPage:`, `writeSenderPage:` |
 
 ---
 
 ## Estado dos testes
 
-**42 passando, 0 falhas, 0 erros** (última verificação: abril 2026)
-
----
-
-## Decisões arquiteturais
-
-- **Formato de saída:** um `.md` por classe, `##` por protocolo, `###` por método
-- **Entrada:** reflexão da imagem Pharo — não parseia `.sources`/`.changes` diretamente
-- **Links:** Microdown convertido para Markdown — `` `Point>>#x` `` → `[Point>>x](Point.md#x)`
-- **Dependências:** via `SystemNavigation default allReferencesTo:` (rápido) + superclasse + traits
-- **Pacotes:** `#category` no formato `#'PharoWiki-Core'` — formato Tonel do Pharo 13
-- **Variáveis temporárias:** sempre declaradas no início do método (padrão Smalltalk)
-- **`nl` não existe** em `WriteStream` do Pharo — usar `cr`
-- **`RPackageOrganizer`** não existe no Pharo 13 — usar `PackageOrganizer`
-- **`isMetaclass`** não existe no Pharo 13 — usar `isMeta`
-- **`protocol`** em `CompiledMethod` retorna objeto `Protocol` — usar `protocol name`
-- **`Point`** não tem subclasses no Pharo 13 — usar `Collection` para testar `hasSubclasses`
+**60 passando, 0 falhas, 0 erros** (última verificação: abril 2026)
 
 ---
 
@@ -142,42 +105,65 @@ PharoWiki/
 
 ```markdown
 # NomeDaClasse
-**Pacote:** `NomeDoPacote`
-**Herda de:** [Superclasse](Superclasse.md)
+**Package:** `NomeDoPacote`
+**Inherits from:** [[Superclasse]]
+**Subclasses:** [[Sub1]], [[Sub2]]
 
-## Comentário
-(conteúdo Microdown convertido)
+## Comment
+(conteúdo Microdown convertido para Markdown)
 
 ## accessing
 
 ### x
+**Sends:** [[y implementors|y]], [[_at_ implementors|@]]
+[[x senders|Senders]]
 ```smalltalk
 x
     ^ x
 ```
 
-## arithmetic
-...
+## Extensions
+- `*NomeDoPacoteExtensor`
 ```
 
----
+### Notas de seletor
 
-## Próximos passos
-
-1. **Gerar primeiras páginas wiki reais** — experimentar com `Point` ou pacote `Kernel`
-2. **Verificar saída gerada** — abrir os `.md` no Obsidian e avaliar qualidade
-3. **Refinar o renderizador** — melhorar `PWikiGenerator>>renderPage:` conforme necessário
-4. **Geração incremental via Epicea** — usar `EpMonitor` para atualizar só o que mudou
-5. **Índice por pacote** — gerar `index.md` para cada pacote
+- `_implementors/ifTrue_ implementors.md` — lista quem implementa `#ifTrue:`
+- `_senders/ifTrue_ senders.md` — lista quem envia `#ifTrue:`
+- Caracteres especiais em seletores convertidos: `:` → `_`, `*` → `_asterisk_`, etc.
+- Links usam formato Obsidian: `[[ClassName#selector|ClassName>>selector]]`
 
 ---
 
-## Convenções Git
+## Decisões arquiteturais
 
-Commits seguem o padrão:
-- `Add NomeClasse` — nova classe
-- `Fix NomeClasse - descrição` — correção
-- `All N tests passing` — marco de testes
+- **Formato de saída:** um `.md` por classe, `##` por protocolo, `###` por método
+- **Entrada:** reflexão da imagem Pharo — não parseia `.sources`/`.changes` diretamente
+- **Links:** formato Obsidian `[[NomeDaNota]]` e `[[NomeDaNota|display]]`
+- **Seletores especiais:** `PWikiSelectorPageBase class >> selectorToFileName:` converte caracteres especiais
+- **`_implementors/`** e **`_senders/`** — apagados e recriados no início de geração em volume (`generateForImage`, `generateForPackageNamed:`)
+- **`writeSelectorPage:`** e **`writeSenderPage:`** — skip-if-exists (idempotente)
+- **`writeClass:package:content:`** — sempre sobrescreve com `ensureDelete`
+- **Metacello não remove métodos** — ao renomear/remover, apagar manualmente no browser antes de recarregar
+- **`nl` não existe** em `WriteStream` — usar `cr`
+- **`PackageOrganizer`** não `RPackageOrganizer`
+- **`isMeta`** não `isMetaclass`
+- **`protocol name`** para obter nome do protocolo de um `CompiledMethod`
+- **`Point`** não tem subclasses no Pharo 13 — usar `Collection` para testar `hasSubclasses`
+- **`allSendersOf:`** e **`allImplementorsOf:`** via `SystemNavigation default`
+
+---
+
+## Roadmap
+
+1. **Tempo restante no Job** — estimar e mostrar no `title:` durante geração longa
+2. **References** — nota `_references/NomeDaClasse references.md` usando `usersOf:` já implementado
+3. **Geração incremental via digest do `.sources`** — calcular SHA do arquivo `.sources` inteiro; se igual ao digest anterior, pular a geração; se diferente, regenerar tudo
+4. **`.changes`** — a discutir: rastrear evolução temporal via Epicea ou ignorar por ora
+5. **Gerar pacote `PharoWiki`** — o wiki se auto-documenta
+6. **Gerar pacote maior** (ex: `Kernel`) — validação em volume
+7. **Gerar imagem completa** — 3000+ classes
+8. **Índice por pacote** — gerar `index.md` para cada pacote
 
 ---
 
@@ -185,8 +171,10 @@ Commits seguem o padrão:
 
 - `aMethod protocol name` — retorna o nome do protocolo como String
 - `aMethod methodClass isMeta` — verifica se é método de classe
+- `SystemNavigation default allImplementorsOf: aSelector` — quem implementa
+- `SystemNavigation default allSendersOf: aSelector` — quem envia
 - `SystemNavigation default allReferencesTo: aClass binding` — quem referencia a classe
 - `PackageOrganizer default packageNamed: name ifAbsent: [...]` — acesso a pacotes
 - `FileSystem memory root` — sistema de arquivos em memória para testes
 - `aDirectory / 'subdir' / 'file.md'` — navegação de paths
-- Tonel: `#name : #NomeDaClasse` (símbolo), `#category : #'Pacote-Tag'`
+- `TonelWriter sourceCodeOf: NomeDaClasse` — gera código Tonel de uma classe para compartilhar com a IA
