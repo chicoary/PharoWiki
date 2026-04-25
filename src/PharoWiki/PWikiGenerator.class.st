@@ -85,7 +85,8 @@ PWikiGenerator >> generateForPackageNamed: aPackageName [
 { #category : 'generating - private' }
 PWikiGenerator >> generateClasses: anArrayOfClasses outerJob: outerJob [
 	"Group anArrayOfClasses by package and process each group under a package-level Job."
-	| byPackage counter |
+	| byPackage counter total |
+	total := anArrayOfClasses size.
 	byPackage := anArrayOfClasses
 		inject: Dictionary new
 		into: [ :dict :aClass |
@@ -106,7 +107,10 @@ PWikiGenerator >> generateClasses: anArrayOfClasses outerJob: outerJob [
 					self generateForClass: aClass classJob: classJob
 				] asJob min: 0; max: (aClass protocols size max: 1); run.
 				counter := counter + 1.
-				outerJob currentValue: counter ]
+				outerJob
+					title: 'PharoWiki — ', counter printString, ' / ', total printString,
+						' (', (counter * 100 // total) printString, '%)';
+					currentValue: counter ]
 		] asJob min: 0; max: classes size; run ]
 ]
 
