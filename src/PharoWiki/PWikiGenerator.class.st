@@ -52,18 +52,14 @@ PWikiGenerator >> generateForPackage: aPackageName [
 { #category : 'generating - public' }
 PWikiGenerator >> generateForImage [
 	"Generate wiki pages for all classes in the image.
-	 Shows three nested progress bars:
-	   - outer : overall class count
-	   - middle : current package
-	   - inner  : protocols within the current class"
+	 Shows two nested progress bars:
+	   - outer : current package
+	   - inner  : current class with overall % and time remaining"
 	| allClasses |
 	self prepareImplementorsDir.
 	self prepareSendersDir.
 	allClasses := Smalltalk allClasses asArray.
-	[ :outerJob |
-		outerJob title: 'PharoWiki — generating full image'.
-		self generateClasses: allClasses outerJob: outerJob
-	] asJob min: 0; max: allClasses size; run
+	self generateClasses: allClasses
 ]
 
 { #category : 'generating - public' }
@@ -76,17 +72,16 @@ PWikiGenerator >> generateForPackageNamed: aPackageName [
 		packageNamed: aPackageName
 		ifAbsent: [ ^ self ].
 	classes := package classes asArray.
-	[ :outerJob |
-		outerJob title: 'PharoWiki — package ', aPackageName.
-		self generateClasses: classes outerJob: outerJob
-	] asJob min: 0; max: classes size; run
+	self generateClasses: classes
 ]
 
 { #category : 'generating - private' }
-PWikiGenerator >> generateClasses: anArrayOfClasses outerJob: outerJob [
-	"Group anArrayOfClasses by package and process each group under a package-level Job."
-	| byPackage counter total |
+PWikiGenerator >> generateClasses: anArrayOfClasses [
+	"Group anArrayOfClasses by package and process each group under a package-level Job.
+	 Progress % and time remaining appear in the class-level job title."
+	| byPackage counter total estimator |
 	total := anArrayOfClasses size.
+	estimator := PWikiProgressEstimator start.
 	byPackage := anArrayOfClasses
 		inject: Dictionary new
 		into: [ :dict :aClass |
@@ -102,15 +97,16 @@ PWikiGenerator >> generateClasses: anArrayOfClasses outerJob: outerJob [
 			pkgJob title: 'Package: ', pkgName.
 			classes doWithIndex: [ :aClass :i |
 				pkgJob currentValue: i.
-				[ :classJob |
-					classJob title: aClass name.
-					self generateForClass: aClass classJob: classJob
-				] asJob min: 0; max: (aClass protocols size max: 1); run.
 				counter := counter + 1.
-				outerJob
-					title: 'PharoWiki — ', counter printString, ' / ', total printString,
-						' (', (counter * 100 // total) printString, '%)';
-					currentValue: counter ]
+				[ :classJob |
+					classJob title: '{1} — {2} / {3} ({4}%){5}' format: {
+						aClass name.
+						counter.
+						total.
+						counter * 100 // total.
+						estimator remainingStringFor: counter of: total }.
+					self generateForClass: aClass classJob: classJob
+				] asJob min: 0; max: (aClass protocols size max: 1); run ]
 		] asJob min: 0; max: classes size; run ]
 ]
 
