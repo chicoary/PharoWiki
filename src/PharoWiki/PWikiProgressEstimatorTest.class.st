@@ -18,30 +18,30 @@ PWikiProgressEstimatorTest >> setUp [
 PWikiProgressEstimatorTest >> testFormatSecondsOnly [
 	"Given 30000ms
 	 When formatting
-	 Then returns '~30s restantes'"
+	 Then returns '~30s remaining'"
 	self
 		assert: (estimator formatMilliseconds: 30000)
-		equals: '~30s restantes'
+		equals: '~30s remaining'
 ]
 
 { #category : 'tests - formatting' }
 PWikiProgressEstimatorTest >> testFormatMinutesAndSeconds [
 	"Given 90000ms (1m 30s)
 	 When formatting
-	 Then returns '~1m 30s restantes'"
+	 Then returns '~1m 30s remaining'"
 	self
 		assert: (estimator formatMilliseconds: 90000)
-		equals: '~1m 30s restantes'
+		equals: '~1m 30s remaining'
 ]
 
 { #category : 'tests - formatting' }
 PWikiProgressEstimatorTest >> testFormatExactlyOneMinute [
 	"Given 60000ms
 	 When formatting
-	 Then returns '~1m 0s restantes'"
+	 Then returns '~1m 0s remaining'"
 	self
 		assert: (estimator formatMilliseconds: 60000)
-		equals: '~1m 0s restantes'
+		equals: '~1m 0s remaining'
 ]
 
 { #category : 'tests - remaining' }
