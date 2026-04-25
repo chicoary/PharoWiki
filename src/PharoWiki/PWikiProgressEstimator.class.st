@@ -74,11 +74,18 @@ PWikiProgressEstimator >> remainingStringFor: counter of: total [
 
 { #category : 'private - formatting' }
 PWikiProgressEstimator >> formatMilliseconds: ms [
-	"Format milliseconds as '~Xm Ys restantes' or '~Xs restantes'."
-	| totalSeconds minutes seconds |
+	"Format milliseconds as:
+	 - '~Xs remaining'        when under 1 minute
+	 - '~Xm Ys remaining'     when under 1 hour
+	 - '~Xh Ym Zs remaining'  when 1 hour or more"
+	| totalSeconds hours minutes seconds |
 	totalSeconds := ms // 1000.
-	minutes := totalSeconds // 60.
+	hours := totalSeconds // 3600.
+	minutes := (totalSeconds \\ 3600) // 60.
 	seconds := totalSeconds \\ 60.
-	minutes = 0 ifTrue: [ ^ '~', seconds printString, 's restantes' ].
-	^ '~', minutes printString, 'm ', seconds printString, 's restantes'
+	hours > 0 ifTrue: [
+		^ '~', hours printString, 'h ', minutes printString, 'm ', seconds printString, 's remaining' ].
+	minutes > 0 ifTrue: [
+		^ '~', minutes printString, 'm ', seconds printString, 's remaining' ].
+	^ '~', seconds printString, 's remaining'
 ]
