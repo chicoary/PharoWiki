@@ -61,14 +61,9 @@ PWikiGenerator >> generateForImage [
 	self prepareSendersDir.
 	allClasses := Smalltalk allClasses asArray.
 	[ :outerJob |
-		outerJob
-			title: 'PharoWiki — generating full image';
-			min: 0;
-			max: allClasses size.
-		self
-			generateClasses: allClasses
-			outerJob: outerJob
-	] asJob run
+		outerJob title: 'PharoWiki — generating full image'.
+		self generateClasses: allClasses outerJob: outerJob
+	] asJob min: 0; max: allClasses size; run
 ]
 
 { #category : 'generating - public' }
@@ -82,14 +77,9 @@ PWikiGenerator >> generateForPackageNamed: aPackageName [
 		ifAbsent: [ ^ self ].
 	classes := package classes asArray.
 	[ :outerJob |
-		outerJob
-			title: 'PharoWiki — package ', aPackageName;
-			min: 0;
-			max: classes size.
-		self
-			generateClasses: classes
-			outerJob: outerJob
-	] asJob run
+		outerJob title: 'PharoWiki — package ', aPackageName.
+		self generateClasses: classes outerJob: outerJob
+	] asJob min: 0; max: classes size; run
 ]
 
 { #category : 'generating - private' }
@@ -108,22 +98,16 @@ PWikiGenerator >> generateClasses: anArrayOfClasses outerJob: outerJob [
 	counter := 0.
 	byPackage keysAndValuesDo: [ :pkgName :classes |
 		[ :pkgJob |
-			pkgJob
-				title: 'Package: ', pkgName;
-				min: 0;
-				max: classes size.
+			pkgJob title: 'Package: ', pkgName.
 			classes doWithIndex: [ :aClass :i |
 				pkgJob currentValue: i.
 				[ :classJob |
-					classJob
-						title: aClass name;
-						min: 0;
-						max: (aClass protocols size max: 1).
+					classJob title: aClass name.
 					self generateForClass: aClass classJob: classJob
-				] asJob run.
+				] asJob min: 0; max: (aClass protocols size max: 1); run.
 				counter := counter + 1.
 				outerJob currentValue: counter ]
-		] asJob run ]
+		] asJob min: 0; max: classes size; run ]
 ]
 
 { #category : 'generating - private' }
