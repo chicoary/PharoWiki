@@ -1,10 +1,12 @@
 Class {
-	#name : #PWikiClassPage,
-	#superclass : #Object,
+	#name : 'PWikiClassPage',
+	#superclass : 'Object',
 	#instVars : [
 		'theClass'
 	],
-	#category : #'PharoWiki-Core'
+	#category : 'PharoWiki-Core',
+	#package : 'PharoWiki',
+	#tag : 'Core'
 }
 
 { #category : 'instance creation' }
@@ -68,6 +70,27 @@ PWikiClassPage >> extensionProtocolNames [
 { #category : 'protocols' }
 PWikiClassPage >> methodsInProtocol: aProtocolName [
 	^ theClass methodsInProtocol: aProtocolName
+]
+
+{ #category : 'protocols' }
+PWikiClassPage >> classProtocolNames [
+	"Protocols defined on the class side, excluding extensions."
+	^ (theClass class protocols
+		reject: [ :p | p name beginsWith: '*' ])
+		collect: [ :p | p name ]
+]
+
+{ #category : 'protocols' }
+PWikiClassPage >> classExtensionProtocolNames [
+	"Extension protocols defined on the class side."
+	^ (theClass class protocols
+		select: [ :p | p name beginsWith: '*' ])
+		collect: [ :p | p name ]
+]
+
+{ #category : 'protocols' }
+PWikiClassPage >> classMethodsInProtocol: aProtocolName [
+	^ theClass class methodsInProtocol: aProtocolName
 ]
 
 { #category : 'accessing' }

@@ -235,6 +235,63 @@ PWikiGenerator >> renderPage: aPage classJob: classJobOrNil [
 				stream nextPutAll: section sourceCode; cr.
 				stream nextPutAll: '```'; cr ] ] ].
 
+	aPage classProtocolNames ifNotEmpty: [ :classProtos |
+		stream cr.
+		stream nextPutAll: '## Class methods'; cr.
+		classProtos do: [ :protocol |
+			| methods |
+			methods := aPage classMethodsInProtocol: protocol.
+			methods ifNotEmpty: [
+				stream cr.
+				stream nextPutAll: '### ', protocol; cr.
+				methods do: [ :method |
+					| section |
+					section := PWikiMethodSection forMethod: method.
+					stream nextPutAll: '#### ', section selector; cr.
+					section sentMessages ifNotEmpty: [ :msgs |
+						stream nextPutAll: '**Sends:** '.
+						msgs
+							do: [ :sel |
+								| fileName |
+								fileName := (PWikiSelectorPageBase selectorToFileName: sel), ' implementors'.
+								stream nextPutAll: '[[', fileName, '|', sel, ']]'.
+								self generateImplementorsPageFor: sel ]
+							separatedBy: [ stream nextPutAll: ', ' ].
+						stream cr ].
+					stream nextPutAll: '[[', (PWikiSelectorPageBase selectorToFileName: section selector), ' senders|Senders]]'; cr.
+					self generateSendersPageFor: section selector.
+					stream nextPutAll: '```smalltalk'; cr.
+					stream nextPutAll: section sourceCode; cr.
+					stream nextPutAll: '```'; cr ] ] ].
+		aPage classExtensionProtocolNames ifNotEmpty: [ :extProtos |
+			stream cr.
+			stream nextPutAll: '### Extensions'; cr.
+			extProtos do: [ :protocol |
+				| methods |
+				methods := aPage classMethodsInProtocol: protocol.
+				methods ifNotEmpty: [
+					stream cr.
+					stream nextPutAll: '#### ', protocol; cr.
+					methods do: [ :method |
+						| section |
+						section := PWikiMethodSection forMethod: method.
+						stream nextPutAll: '##### ', section selector; cr.
+						section sentMessages ifNotEmpty: [ :msgs |
+							stream nextPutAll: '**Sends:** '.
+							msgs
+								do: [ :sel |
+									| fileName |
+									fileName := (PWikiSelectorPageBase selectorToFileName: sel), ' implementors'.
+									stream nextPutAll: '[[', fileName, '|', sel, ']]'.
+									self generateImplementorsPageFor: sel ]
+								separatedBy: [ stream nextPutAll: ', ' ].
+							stream cr ].
+						stream nextPutAll: '[[', (PWikiSelectorPageBase selectorToFileName: section selector), ' senders|Senders]]'; cr.
+						self generateSendersPageFor: section selector.
+						stream nextPutAll: '```smalltalk'; cr.
+						stream nextPutAll: section sourceCode; cr.
+						stream nextPutAll: '```'; cr ] ] ] ] ].
+
 	aPage extensionProtocolNames ifNotEmpty: [ :extProtos |
 		stream cr.
 		stream nextPutAll: '## Extensions'; cr.
