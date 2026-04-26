@@ -35,7 +35,7 @@ PharoWiki/
 ├── .gitignore
 ├── README.md
 ├── CONVENTIONS.md
-├── PHAROWIKI_CONTEXT.md
+├── CONTEXT.md
 ├── scripts.md
 └── src/
     ├── BaselineOfPharoWiki/
@@ -46,6 +46,8 @@ PharoWiki/
         ├── PWikiClassPage.class.st              (tag: Core)
         ├── PWikiMethodSection.class.st          (tag: Core)
         ├── PWikiGenerator.class.st              (tag: Core)
+        ├── PWikiGenerationRecord.class.st       (tag: Core)
+        ├── PWikiProgressEstimator.class.st      (tag: Core)
         ├── PWikiSelectorPageBase.class.st       (tag: Core)
         ├── PWikiImplementorsPage.class.st       (tag: Core)
         ├── PWikiSendersPage.class.st            (tag: Core)
@@ -61,7 +63,8 @@ PharoWiki/
         ├── PWikiFileWriterTest.class.st         (tag: Tests)
         ├── PWikiGeneratorTest.class.st          (tag: Tests)
         ├── PWikiImplementorsPageTest.class.st   (tag: Tests)
-        └── PWikiSendersPageTest.class.st        (tag: Tests)
+        ├── PWikiSendersPageTest.class.st        (tag: Tests)
+        └── PWikiProgressEstimatorTest.class.st  (tag: Tests)
 ```
 
 ---
@@ -72,9 +75,11 @@ PharoWiki/
 
 | Classe | Responsabilidade |
 |--------|-----------------|
-| `PWikiClassPage` | Introspecção de uma classe via reflexão da imagem |
+| `PWikiClassPage` | Introspecção de uma classe via reflexão da imagem — instância e classe |
 | `PWikiMethodSection` | Encapsula um método compilado + acesso à AST |
 | `PWikiGenerator` | Orquestra a geração — entry point principal |
+| `PWikiGenerationRecord` | Grava `_generation.ston` e `_generation.md` ao final de `generateForImage` |
+| `PWikiProgressEstimator` | Estima tempo restante durante geração; mantém `LastRatePerClass` como variável de classe |
 | `PWikiSelectorPageBase` | Classe abstrata — base para páginas de seletor |
 | `PWikiImplementorsPage` | Gera nota `_implementors/` com quem implementa um seletor |
 | `PWikiSendersPage` | Gera nota `_senders/` com quem envia um seletor |
@@ -97,7 +102,7 @@ PharoWiki/
 
 ## Estado dos testes
 
-**60 passando, 0 falhas, 0 erros** (última verificação: abril 2026)
+**62 passando, 0 falhas, 0 erros, 5 pulados** (última verificação: abril 2026)
 
 ---
 
@@ -115,15 +120,34 @@ PharoWiki/
 ## accessing
 
 ### x
-**Sends:** [[y implementors|y]], [[_at_ implementors|@]]
+**Sends:** [[y implementors|y]]
 [[x senders|Senders]]
 ```smalltalk
 x
     ^ x
 ```
 
+## Class methods
+
+### instance creation
+#### new:
+**Sends:** ...
+[[new_ senders|Senders]]
+```smalltalk
+new: anInteger
+    ...
+```
+
+### Extensions
+#### *PacoteExtensor
+##### metodoDeClasse
+...
+
 ## Extensions
-- `*NomeDoPacoteExtensor`
+
+### *NomeDoPacoteExtensor
+#### metodo
+...
 ```
 
 ### Notas de seletor
@@ -132,38 +156,41 @@ x
 - `_senders/ifTrue_ senders.md` — lista quem envia `#ifTrue:`
 - Caracteres especiais em seletores convertidos: `:` → `_`, `*` → `_asterisk_`, etc.
 - Links usam formato Obsidian: `[[ClassName#selector|ClassName>>selector]]`
+- Métodos de classe linkam para `ClassName.md` (não `ClassName class.md`) via `instanceSide name`
 
 ---
 
 ## Decisões arquiteturais
 
-- **Formato de saída:** um `.md` por classe, `##` por protocolo, `###` por método
+- **Formato de saída:** um `.md` por classe, `##` por protocolo de instância, `## Class methods` para lado classe, `## Extensions` para extensões de instância
 - **Entrada:** reflexão da imagem Pharo — não parseia `.sources`/`.changes` diretamente
 - **Links:** formato Obsidian `[[NomeDaNota]]` e `[[NomeDaNota|display]]`
 - **Seletores especiais:** `PWikiSelectorPageBase class >> selectorToFileName:` converte caracteres especiais
-- **`_implementors/`** e **`_senders/`** — apagados e recriados no início de geração em volume (`generateForImage`, `generateForPackageNamed:`)
+- **`_implementors/`** e **`_senders/`** — apagados e recriados no início de geração em volume
 - **`writeSelectorPage:`** e **`writeSenderPage:`** — skip-if-exists (idempotente)
 - **`writeClass:package:content:`** — sempre sobrescreve com `ensureDelete`
+- **Extensions:** renderizadas inline com código, `Sends:` e `Senders` — não apenas listadas por nome
+- **Progresso:** `pkgJob` mostra `NomePacote — N / Total (%)  — ~Xh Ym Zs remaining`; `classJob` mostra nome da classe; `outerJob` título fixo
+- **`PWikiProgressEstimator`** — fallback para `LastRatePerClass` quando estimativa ultrapassa 24h
+- **`PWikiGenerationRecord`** — gerado apenas por `generateForImage`, não por `generateForPackageNamed:`
+- **`asJob`** — `min:` e `max:` em cascata no `asJob`, não dentro do bloco
 - **Metacello não remove métodos** — ao renomear/remover, apagar manualmente no browser antes de recarregar
 - **`nl` não existe** em `WriteStream` — usar `cr`
 - **`PackageOrganizer`** não `RPackageOrganizer`
 - **`isMeta`** não `isMetaclass`
 - **`protocol name`** para obter nome do protocolo de um `CompiledMethod`
 - **`Point`** não tem subclasses no Pharo 13 — usar `Collection` para testar `hasSubclasses`
-- **`allSendersOf:`** e **`allImplementorsOf:`** via `SystemNavigation default`
 
 ---
 
 ## Roadmap
 
-1. **Tempo restante no Job** — estimar e mostrar no `title:` durante geração longa
-2. **References** — nota `_references/NomeDaClasse references.md` usando `usersOf:` já implementado
-3. **Geração incremental via digest do `.sources`** — calcular SHA do arquivo `.sources` inteiro; se igual ao digest anterior, pular a geração; se diferente, regenerar tudo
-4. **`.changes`** — a discutir: rastrear evolução temporal via Epicea ou ignorar por ora
-5. **Gerar pacote `PharoWiki`** — o wiki se auto-documenta
-6. **Gerar pacote maior** (ex: `Kernel`) — validação em volume
-7. **Gerar imagem completa** — 3000+ classes
-8. **Índice por pacote** — gerar `index.md` para cada pacote
+1. **References** — nota `_references/NomeDaClasse references.md` usando `usersOf:` já implementado
+2. **Geração incremental via digest do `.sources`** — `PWikiGenerationRecord` já grava o digest; comparar com geração anterior para decidir se regenera
+3. **Extensions navegáveis no lado classe** — já implementado para instância; verificar se falta algo no lado classe
+4. **Índice por pacote** — gerar `index.md` para cada pacote
+5. **`.changes` via Epicea** — rastrear evolução temporal
+6. **`_references/`** — quem referencia cada classe
 
 ---
 
@@ -171,6 +198,7 @@ x
 
 - `aMethod protocol name` — retorna o nome do protocolo como String
 - `aMethod methodClass isMeta` — verifica se é método de classe
+- `aMethod methodClass instanceSide name` — nome da classe sem `class` para links
 - `SystemNavigation default allImplementorsOf: aSelector` — quem implementa
 - `SystemNavigation default allSendersOf: aSelector` — quem envia
 - `SystemNavigation default allReferencesTo: aClass binding` — quem referencia a classe
@@ -178,3 +206,5 @@ x
 - `FileSystem memory root` — sistema de arquivos em memória para testes
 - `aDirectory / 'subdir' / 'file.md'` — navegação de paths
 - `TonelWriter sourceCodeOf: NomeDaClasse` — gera código Tonel de uma classe para compartilhar com a IA
+- `SHA256 hashMessage: bytes` — digest do `.sources`
+- `STON toString: aDictionary` — serialização para `.ston`
