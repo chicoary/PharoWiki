@@ -1,0 +1,93 @@
+Class {
+	#name : 'PWikiGenerationRecord',
+	#superclass : 'Object',
+	#instVars : [
+		'sourcesFile',
+		'sourcesDigest',
+		'generatedAt',
+		'classCount',
+		'durationSeconds',
+		'outputDir'
+	],
+	#category : 'PharoWiki-Core',
+	#package : 'PharoWiki',
+	#tag : 'Core'
+}
+
+{ #category : 'instance creation' }
+PWikiGenerationRecord class >> outputDir: aDirectory classCount: aCount startTime: aDateAndTime [
+	^ self new
+		initializeOutputDir: aDirectory
+		classCount: aCount
+		startTime: aDateAndTime
+]
+
+{ #category : 'initialization' }
+PWikiGenerationRecord >> initializeOutputDir: aDirectory classCount: aCount startTime: aDateAndTime [
+	outputDir := aDirectory.
+	classCount := aCount.
+	generatedAt := aDateAndTime.
+	durationSeconds := (DateAndTime now - aDateAndTime) totalSeconds.
+	sourcesFile := Smalltalk sourcesFile basename.
+	sourcesDigest := self computeDigest
+]
+
+{ #category : 'private' }
+PWikiGenerationRecord >> computeDigest [
+	"Compute SHA256 digest of the .sources file."
+	| bytes |
+	bytes := Smalltalk sourcesFile binaryReadStream contentsOfEntireFile.
+	^ (SHA256 hashMessage: bytes) hex
+]
+
+{ #category : 'writing' }
+PWikiGenerationRecord >> writeFiles [
+	self writeSton.
+	self writeMarkdown
+]
+
+{ #category : 'writing' }
+PWikiGenerationRecord >> writeSton [
+	| file |
+	file := outputDir / '_generation.ston'.
+	file writeStreamDo: [ :stream |
+		stream nextPutAll: (STON toString: self asDictionary) ]
+]
+
+{ #category : 'writing' }
+PWikiGenerationRecord >> writeMarkdown [
+	| file |
+	file := outputDir / '_generation.md'.
+	file writeStreamDo: [ :stream |
+		stream
+			nextPutAll: '# PharoWiki Generation Record'; cr;
+			nextPutAll: '**Generated at:** ', generatedAt printString; cr;
+			nextPutAll: '**Duration:** ', self formattedDuration; cr;
+			nextPutAll: '**Classes:** ', classCount printString; cr;
+			nextPutAll: '**Sources file:** `', sourcesFile, '`'; cr;
+			nextPutAll: '**Sources digest:** `', sourcesDigest, '`'; cr ]
+]
+
+{ #category : 'converting' }
+PWikiGenerationRecord >> asDictionary [
+	^ Dictionary new
+		at: #sourcesFile put: sourcesFile;
+		at: #sourcesDigest put: sourcesDigest;
+		at: #generatedAt put: generatedAt printString;
+		at: #classCount put: classCount;
+		at: #durationSeconds put: durationSeconds;
+		yourself
+]
+
+{ #category : 'private' }
+PWikiGenerationRecord >> formattedDuration [
+	| hours minutes seconds |
+	hours := durationSeconds // 3600.
+	minutes := (durationSeconds \\ 3600) // 60.
+	seconds := durationSeconds \\ 60.
+	hours > 0 ifTrue: [
+		^ hours printString, 'h ', minutes printString, 'm ', seconds printString, 's' ].
+	minutes > 0 ifTrue: [
+		^ minutes printString, 'm ', seconds printString, 's' ].
+	^ seconds printString, 's'
+]

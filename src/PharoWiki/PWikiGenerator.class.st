@@ -17,41 +17,6 @@ PWikiGenerator class >> outputDir: aDirectory [
 	^ self new initializeWith: aDirectory
 ]
 
-{ #category : 'generating - private' }
-PWikiGenerator >> generateClasses: anArrayOfClasses [
-	"Group anArrayOfClasses by package and process each group under a package-level Job.
-	 Progress % and time remaining appear in the class-level job title."
-	| byPackage counter total estimator |
-	total := anArrayOfClasses size.
-	estimator := PWikiProgressEstimator start.
-	byPackage := anArrayOfClasses
-		inject: Dictionary new
-		into: [ :dict :aClass |
-			| pkgName col |
-			pkgName := aClass package name.
-			col := dict at: pkgName ifAbsent: [ OrderedCollection new ].
-			col add: aClass.
-			dict at: pkgName put: col.
-			dict ].
-	counter := 0.
-	byPackage keysAndValuesDo: [ :pkgName :classes |
-		[ :pkgJob |
-			pkgJob title: 'Package: ', pkgName.
-			classes doWithIndex: [ :aClass :i |
-				pkgJob currentValue: i.
-				counter := counter + 1.
-				[ :classJob |
-					classJob title: ('{1} — {2} / {3} ({4}%){5}' format: {
-						aClass name.
-						counter.
-						total.
-						counter * 100 // total.
-						estimator remainingStringFor: counter of: total }).
-					self generateForClass: aClass classJob: classJob
-				] asJob min: 0; max: (aClass protocols size max: 1); run ]
-		] asJob min: 0; max: classes size; run ]
-]
-
 { #category : 'generating - public' }
 PWikiGenerator >> generateForClass: aClass [
 	"Generate a wiki page for aClass without job feedback."
@@ -236,4 +201,40 @@ PWikiGenerator >> generateForPackageNamed: aPackageName [
 		outerJob title: 'PharoWiki — package ', aPackageName.
 		self generateClasses: classes
 	] asJob run
+]
+
+{ #category : 'generating - private' }
+PWikiGenerator >> generateClasses: anArrayOfClasses [
+	"Group anArrayOfClasses by package and process each group under a package-level Job.
+	 Progress % and time remaining appear in the package-level job title."
+	| byPackage counter total estimator |
+	total := anArrayOfClasses size.
+	estimator := PWikiProgressEstimator start.
+	byPackage := anArrayOfClasses
+		inject: Dictionary new
+		into: [ :dict :aClass |
+			| pkgName col |
+			pkgName := aClass package name.
+			col := dict at: pkgName ifAbsent: [ OrderedCollection new ].
+			col add: aClass.
+			dict at: pkgName put: col.
+			dict ].
+	counter := 0.
+	byPackage keysAndValuesDo: [ :pkgName :classes |
+		[ :pkgJob |
+			pkgJob title: 'Package: ', pkgName.
+			classes doWithIndex: [ :aClass :i |
+				pkgJob currentValue: i.
+				counter := counter + 1.
+				pkgJob title: ('{1} — {2} / {3} ({4}%){5}' format: {
+					pkgName.
+					counter.
+					total.
+					counter * 100 // total.
+					estimator remainingStringFor: counter of: total }).
+				[ :classJob |
+					classJob title: aClass name.
+					self generateForClass: aClass classJob: classJob
+				] asJob min: 0; max: (aClass protocols size max: 1); run ]
+		] asJob min: 0; max: classes size; run ]
 ]
