@@ -26,7 +26,7 @@ PWikiSendersPage >> title [
 PWikiSendersPage >> linkFor: aMethod [
 	"[[ClassName#methodSelector|ClassName>>methodSelector]]"
 	| className methodSelector |
-	className := aMethod methodClass name.
+	className := aMethod methodClass instanceSide name.
 	methodSelector := aMethod selector.
 	^ '[[', className, '#', methodSelector, '|', className, '>>', methodSelector, ']]'
 ]

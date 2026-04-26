@@ -26,6 +26,6 @@ PWikiImplementorsPage >> title [
 PWikiImplementorsPage >> linkFor: aMethod [
 	"[[ClassName#selector|ClassName>>selector]]"
 	| className |
-	className := aMethod methodClass name.
+	className := aMethod methodClass instanceSide name.
 	^ '[[', className, '#', selector, '|', className, '>>', selector, ']]'
 ]
