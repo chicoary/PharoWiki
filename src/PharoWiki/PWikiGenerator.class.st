@@ -5,7 +5,9 @@ Class {
 		'outputDir',
 		'writer',
 		'converter',
-		'extractor'
+		'extractor',
+		'implementorsCache',
+		'sendersCache'
 	],
 	#category : 'PharoWiki-Core',
 	#package : 'PharoWiki',
@@ -15,75 +17,6 @@ Class {
 { #category : 'instance creation' }
 PWikiGenerator class >> outputDir: aDirectory [
 	^ self new initializeWith: aDirectory
-]
-
-{ #category : 'initialization' }
-PWikiGenerator >> initializeWith: aDirectory [
-	outputDir := aDirectory.
-	outputDir exists ifFalse: [ outputDir ensureCreateDirectory ].
-	writer := PWikiFileWriter outputDir: aDirectory.
-	converter := PWikiMicrodownConverter new.
-	extractor := PWikiDependencyExtractor new
-]
-
-{ #category : 'generating - public' }
-PWikiGenerator >> generateForClass: aClass [
-	"Generate a wiki page for aClass without job feedback."
-	| page content |
-	page := PWikiClassPage forClass: aClass.
-	content := self renderPage: page.
-	writer
-		writeClass: page className
-		package: page packageName
-		content: content
-]
-
-{ #category : 'generating - public' }
-PWikiGenerator >> generateForPackage: aPackageName [
-	"Generate wiki pages for all classes in the given package, without job feedback."
-	| package |
-	package := PackageOrganizer default
-		packageNamed: aPackageName
-		ifAbsent: [ ^ self ].
-	package classes do: [ :aClass |
-		self generateForClass: aClass ]
-]
-
-{ #category : 'generating - public' }
-PWikiGenerator >> generateForImage [
-	"Generate wiki pages for all classes in the image.
-	 Shows two nested progress bars:
-	   - outer : fixed title anchor
-	   - inner  : current class with overall % and time remaining"
-	| allClasses startTime |
-	self prepareImplementorsDir.
-	self prepareSendersDir.
-	allClasses := Smalltalk allClasses asArray.
-	startTime := DateAndTime now.
-	[ :outerJob |
-		outerJob title: 'PharoWiki — generating full image'.
-		self generateClasses: allClasses
-	] asJob run.
-	(PWikiGenerationRecord
-		outputDir: outputDir
-		classCount: allClasses size
-		startTime: startTime) writeFiles
-]
-
-{ #category : 'generating - public' }
-PWikiGenerator >> generateForPackageNamed: aPackageName [
-	"Generate wiki pages for all classes in one package, with job feedback."
-	| package classes |
-	self prepareImplementorsDir.
-	self prepareSendersDir.
-	package := PackageOrganizer default
-		packageNamed: aPackageName
-		ifAbsent: [ ^ self ].
-	classes := package classes asArray.
-	[ :outerJob |
-		outerJob title: 'PharoWiki — package ', aPackageName.
-		self generateClasses: classes
-	] asJob run
 ]
 
 { #category : 'generating - private' }
@@ -122,6 +55,18 @@ PWikiGenerator >> generateClasses: anArrayOfClasses [
 		] asJob min: 0; max: classes size; run ]
 ]
 
+{ #category : 'generating - public' }
+PWikiGenerator >> generateForClass: aClass [
+	"Generate a wiki page for aClass without job feedback."
+	| page content |
+	page := PWikiClassPage forClass: aClass.
+	content := self renderPage: page.
+	writer
+		writeClass: page className
+		package: page packageName
+		content: content
+]
+
 { #category : 'generating - private' }
 PWikiGenerator >> generateForClass: aClass classJob: classJob [
 	"Generate one class page, advancing classJob per protocol rendered."
@@ -134,12 +79,60 @@ PWikiGenerator >> generateForClass: aClass classJob: classJob [
 		content: content
 ]
 
+{ #category : 'generating - public' }
+PWikiGenerator >> generateForImage [
+	"Generate wiki pages for all classes in the image.
+	 Shows two nested progress bars:
+	   - outer : fixed title anchor
+	   - inner  : current class with overall % and time remaining"
+	| allClasses startTime |
+	self prepareImplementorsDir.
+	self prepareSendersDir.
+	allClasses := Smalltalk allClasses asArray.
+	startTime := DateAndTime now.
+	[ :outerJob |
+		outerJob title: 'PharoWiki — generating full image'.
+		self generateClasses: allClasses
+	] asJob run.
+	(PWikiGenerationRecord
+		outputDir: outputDir
+		classCount: allClasses size
+		startTime: startTime) writeFiles
+]
+
+{ #category : 'generating - public' }
+PWikiGenerator >> generateForPackage: aPackageName [
+	"Generate wiki pages for all classes in the given package, without job feedback."
+	| package |
+	package := PackageOrganizer default
+		packageNamed: aPackageName
+		ifAbsent: [ ^ self ].
+	package classes do: [ :aClass |
+		self generateForClass: aClass ]
+]
+
+{ #category : 'generating - public' }
+PWikiGenerator >> generateForPackageNamed: aPackageName [
+	"Generate wiki pages for all classes in one package, with job feedback."
+	| package classes |
+	self prepareImplementorsDir.
+	self prepareSendersDir.
+	package := PackageOrganizer default
+		packageNamed: aPackageName
+		ifAbsent: [ ^ self ].
+	classes := package classes asArray.
+	[ :outerJob |
+		outerJob title: 'PharoWiki — package ', aPackageName.
+		self generateClasses: classes
+	] asJob run
+]
+
 { #category : 'generating - private' }
 PWikiGenerator >> generateImplementorsPageFor: aSelector [
 	"Generate the implementors note for aSelector.
 	 Skips if the file already exists — handled by PWikiFileWriter."
 	| implementors page |
-	implementors := extractor implementorsOf: aSelector.
+	implementors := self implementorsOf: aSelector.
 	page := PWikiImplementorsPage
 		selector: aSelector
 		implementors: implementors.
@@ -151,11 +144,50 @@ PWikiGenerator >> generateSendersPageFor: aSelector [
 	"Generate the senders note for aSelector.
 	 Skips if the file already exists — handled by PWikiFileWriter."
 	| senders page |
-	senders := extractor sendersOf: aSelector.
+	senders := self sendersOf: aSelector.
 	page := PWikiSendersPage
 		selector: aSelector
 		senders: senders.
 	writer writeSenderPage: page
+]
+
+{ #category : 'accessing' }
+PWikiGenerator >> implementorsCache [
+	^ implementorsCache
+]
+
+{ #category : 'accessing' }
+PWikiGenerator >> sendersCache [
+	^ sendersCache
+]
+
+{ #category : 'private' }
+PWikiGenerator >> implementorsOf: aSelector [
+	"Return the implementors of aSelector, consulting the cache first."
+	^ implementorsCache
+		at: aSelector
+		ifAbsentPut: [ extractor implementorsOf: aSelector ]
+]
+
+{ #category : 'private' }
+PWikiGenerator >> sendersOf: aSelector [
+	"Return the senders of aSelector, consulting the cache first."
+	^ sendersCache
+		at: aSelector
+		ifAbsentPut: [ extractor sendersOf: aSelector ]
+]
+
+{ #category : 'initialization' }
+PWikiGenerator >> initializeWith: aDirectory [
+	outputDir := aDirectory.
+	outputDir exists ifFalse: [ outputDir ensureCreateDirectory ].
+	writer := PWikiFileWriter outputDir: aDirectory.
+	converter := PWikiMicrodownConverter new.
+	extractor := PWikiDependencyExtractor new.
+	implementorsCache := LRUCache new.
+	implementorsCache maximumWeight: 2000.
+	sendersCache := LRUCache new.
+	sendersCache maximumWeight: 2000
 ]
 
 { #category : 'generating - private' }
@@ -209,6 +241,7 @@ PWikiGenerator >> renderPage: aPage classJob: classJobOrNil [
 
 	aPage protocolNames do: [ :protocol |
 		| methods |
+		DebugTracer default add: protocol labeled: #protocol.
 		protocolIndex := protocolIndex + 1.
 		classJobOrNil ifNotNil: [ classJobOrNil currentValue: protocolIndex ].
 		methods := aPage methodsInProtocol: protocol.
