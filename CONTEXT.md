@@ -38,6 +38,7 @@ PharoWiki/
 ├── CONVENTIONS.md
 ├── CONTEXT.md
 ├── scripts.md
+├── bench.script.st
 └── src/
     ├── BaselineOfPharoWiki/
     │   ├── package.st
@@ -78,7 +79,7 @@ PharoWiki/
 |--------|-----------------|
 | `PWikiClassPage` | Introspecção de uma classe via reflexão da imagem — instância e classe |
 | `PWikiMethodSection` | Encapsula um método compilado + acesso à AST |
-| `PWikiGenerator` | Orquestra a geração — entry point principal |
+| `PWikiGenerator` | Orquestra a geração — entry point principal; cache LRU de implementors e senders (maximumWeight: 2000) |
 | `PWikiGenerationRecord` | Grava `_generation.ston` e `_generation.md` ao final de `generateForImage` |
 | `PWikiProgressEstimator` | Estima tempo restante durante geração; mantém `LastRatePerClass` como variável de classe |
 | `PWikiSelectorPageBase` | Classe abstrata — base para páginas de seletor |
@@ -175,6 +176,7 @@ new: anInteger
 - **`PWikiProgressEstimator`** — fallback para `LastRatePerClass` quando estimativa ultrapassa 24h
 - **`PWikiGenerationRecord`** — gerado apenas por `generateForImage`, não por `generateForPackageNamed:`
 - **`asJob`** — `min:` e `max:` em cascata no `asJob`, não dentro do bloco
+- **Cache de implementors e senders:** `LRUCache` (maximumWeight: 2000) em `PWikiGenerator` — `implementorsOf:` e `sendersOf:` consultam o cache antes de delegar ao `PWikiDependencyExtractor`; evita varreduras repetidas via `SystemNavigation` durante geração em volume; tamanho calibrado via benchmark amostral (`bench.script.st`)
 - **Metacello não remove métodos** — ao renomear/remover, apagar manualmente no browser antes de recarregar
 - **`nl` não existe** em `WriteStream` — usar `cr`
 - **`PackageOrganizer`** não `RPackageOrganizer`
