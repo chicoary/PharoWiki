@@ -185,12 +185,7 @@ new: anInteger
 
 ## Roadmap
 
-1. **References** — nota `_references/NomeDaClasse references.md` usando `usersOf:` já implementado
-2. **Geração incremental via digest do `.sources`** — `PWikiGenerationRecord` já grava o digest; comparar com geração anterior para decidir se regenera
-3. **Extensions navegáveis no lado classe** — já implementado para instância; verificar se falta algo no lado classe
-4. **Índice por pacote** — gerar `index.md` para cada pacote
-5. **`.changes` via Epicea** — rastrear evolução temporal
-6. **`_references/`** — quem referencia cada classe
+Ver o arquivo ROADMAP.md.
 
 ---
 
