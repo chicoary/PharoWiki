@@ -26,6 +26,7 @@
 - [x] Jobs aninhados com 3 níveis: imagem → pacote → classe
 - [x] Geração incremental simples: `writeSelectorPage:` e `writeSenderPage:` pulam se arquivo já existe
 - [x] Extensions navegáveis no lado instância com código, `Sends:` e `Senders`
+- [x] Extensions no lado classe — verificado com `Boolean`; renderização completa (código inline, `Sends:`, `Senders`)
 - [x] **Cache de implementors e senders** — `LRUCache` (maximumWeight: 2000) em `PWikiGenerator` para `implementorsOf:` e `sendersOf:`, evitando varreduras repetidas via `SystemNavigation` durante geração em volume; tamanho calibrado via benchmark amostral (`bench.script.st`)
 
 ---
@@ -34,7 +35,6 @@
 
 - [ ] **Validação em volume** — gerar pacote `Kernel` e depois imagem completa; avaliar qualidade da saída
 - [ ] **References** — nota `_references/ClassName references.md` com quem referencia uma classe (via `usersOf:` já implementado em `PWikiDependencyExtractor`)
-- [ ] **Extensions no lado classe** — verificar se a renderização de extensões no lado classe está completa (instância já OK)
 
 ---
 
