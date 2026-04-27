@@ -15,6 +15,7 @@ Wiki navegável gerada a partir do código-fonte do Pharo Smalltalk, inspirada n
 
 - **GitHub:** https://github.com/chicoary/PharoWiki
 - **Local:** `/Users/chicoary/Documents/Obsidian Vaults/CODE Vault/1 - Projetos/1 - In progress/PharoWiki/Anexos/PharoWiki`
+- **Wiki:** /Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki
 - **Branch principal:** `main`
 
 ---
