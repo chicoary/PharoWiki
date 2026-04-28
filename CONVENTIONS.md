@@ -1,5 +1,5 @@
 # PharoWiki — Convenções do Projeto
-> Leia este arquivo no início de cada sessão, junto com PHAROWIKI_CONTEXT.md.
+> Leia este arquivo no início de cada sessão, junto com CONTEXT.md.
 > Atualizar sempre que uma nova convenção for estabelecida.
 > **Atualizar `CONVENTIONS.md` tem prioridade sobre adicionar ou corrigir código.**
 
@@ -32,6 +32,7 @@
 - **Git registra estado funcionando** — nunca commitar com testes falhando.
 - **Uma coisa de cada vez** — corrigir um problema por vez, com testes quando aplicável.
 - **Metacello não remove métodos** — ao renomear ou remover um método, o Metacello recarrega o arquivo mas não apaga o método antigo da imagem. Remover manualmente no browser do Pharo antes de recarregar.
+- **Atualizar arquivos de contexto no projeto Claude** — sempre que `ROADMAP.md`, `CONVENTIONS.md` ou `CONTEXT.md` forem modificados, fazer upload das versões atualizadas nos arquivos do projeto PharoWiki no Claude. Isso garante que a próxima sessão começa com contexto correto. A Claude deve lembrar o usuário disso ao final de qualquer sessão que produza mudanças nesses arquivos.
 
 ---
 

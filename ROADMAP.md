@@ -34,7 +34,6 @@
 ## Próximos passos
 
 - [ ] **Validação em volume** — gerar pacote `Kernel` e depois imagem completa; avaliar qualidade da saída
-- [ ] **References** — nota `_references/ClassName references.md` com quem referencia uma classe (via `usersOf:` já implementado em `PWikiDependencyExtractor`)
 
 ---
 
@@ -52,3 +51,7 @@
 - [ ] **Índice global** — `index.md` na raiz com todos os pacotes
 - [ ] **PharoWiki como contexto para a IA** — usar as páginas `.md` geradas como contexto em vez de copiar código Tonel manualmente
 - [ ] **Integração com Claude Code** — explorar Claude Code apontado para o vault gerado
+- [ ] **References via Dataview** — o plugin Dataview do Obsidian expõe backlinks nativos via query `LIST FROM [[ClassName]]`, suprindo a necessidade de references sem geração pelo `PWikiGenerator`. Não requer código Pharo; o vault já contém os dados. Explorar queries analíticas úteis para navegação por dependências e análise de impacto (ex: filtrar por pasta para excluir `_implementors` e `_senders` do resultado).
+- [ ] **Índice de classes** — nota `_index.md` com lista alfabética de todas as classes do vault, gerada pelo `PWikiGenerator`
+- [ ] **Queries Dataview para navegação** — notas especiais com queries dinâmicas: classes por pacote, classes mais referenciadas, cruzamento senders/implementors; explorar antes de investir em código de geração
+- [ ] **Documentar configuração do Obsidian** — ao usar o vault PharoWiki, desativar "Enable Inline Queries" nas configurações do plugin DataView; código Smalltalk com seletores começando com `=` (como `==`) conflita com o parser de inline queries do DataView no Live Preview
