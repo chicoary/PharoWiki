@@ -36,7 +36,7 @@ PWikiGenerationRecord >> initializeOutputDir: aDirectory classCount: aCount star
 PWikiGenerationRecord >> computeDigest [
 	"Compute SHA256 digest of the .sources file."
 	| bytes |
-	bytes := Smalltalk sourcesFile binaryReadStream contentsOfEntireFile.
+	bytes := Smalltalk sourcesFile binaryReadStream upToEnd.
 	^ (SHA256 hashMessage: bytes) hex
 ]
 
