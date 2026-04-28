@@ -183,6 +183,8 @@ new: anInteger
 - **`isMeta`** não `isMetaclass`
 - **`protocol name`** para obter nome do protocolo de um `CompiledMethod`
 - **`Point`** não tem subclasses no Pharo 13 — usar `Collection` para testar `hasSubclasses`
+- **DataView "Enable Inline Queries"** — desativar nas configurações do plugin no Obsidian; seletores Smalltalk começando com `=` (como `==`) conflitam com o parser de inline queries do DataView no Live Preview
+- **`PWikiGenerationRecord >> computeDigest`** — usar `upToEnd` em vez de `contentsOfEntireFile`; `binaryReadStream` retorna `ZnBufferedReadStream` que não entende `contentsOfEntireFile`
 
 ---
 
@@ -206,3 +208,4 @@ Ver o arquivo ROADMAP.md.
 - `TonelWriter sourceCodeOf: NomeDaClasse` — gera código Tonel de uma classe para compartilhar com a IA
 - `SHA256 hashMessage: bytes` — digest do `.sources`
 - `STON toString: aDictionary` — serialização para `.ston`
+- `ZnBufferedReadStream` não entende `contentsOfEntireFile` — usar `upToEnd`

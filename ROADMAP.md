@@ -28,20 +28,32 @@
 - [x] Extensions navegáveis no lado instância com código, `Sends:` e `Senders`
 - [x] Extensions no lado classe — verificado com `Boolean`; renderização completa (código inline, `Sends:`, `Senders`)
 - [x] **Cache de implementors e senders** — `LRUCache` (maximumWeight: 2000) em `PWikiGenerator` para `implementorsOf:` e `sendersOf:`, evitando varreduras repetidas via `SystemNavigation` durante geração em volume; tamanho calibrado via benchmark amostral (`bench.script.st`)
+- [x] **Validação em volume** — geração do pacote `Kernel` e da imagem completa (10.655 classes, 112.665 arquivos, 128 MB); qualidade da saída validada
 
 ---
 
 ## Próximos passos
 
-- [ ] **Validação em volume** — gerar pacote `Kernel` e depois imagem completa; avaliar qualidade da saída
+- [ ] **Duas wikis para apoio à IA** — ver seção abaixo
 
 ---
 
-## Geração incremental avançada
+## Duas wikis para apoio à IA
 
-- [ ] **Digest do `.sources`** — `PWikiGenerationRecord` já grava o digest; comparar com geração anterior para decidir se regenera
-- [ ] **Regenerar só o que mudou** — salvar digests por classe e pular as inalteradas na próxima geração
-- [ ] **Integração com Epicea** — usar `EpMonitor` para geração incremental automática quando código muda na imagem; discutir estratégia: rastrear evolução temporal ou só estado atual
+A IA precisa de duas camadas de contexto para apoiar codificação efetiva num projeto Pharo:
+
+**Wiki de base** — gerada a partir do `.sources` via reflexão da imagem. Representa o Pharo "de fábrica". Regenerada apenas quando o digest do `.sources` muda — ou seja, quando se atualiza a versão do Pharo. Estável, raramente muda. Já implementada.
+
+**Wiki de projeto** — gerada via Epicea (`EpMonitor`), capturando as mudanças feitas durante o desenvolvimento do projeto naquela imagem. Atualizada periodicamente ou por evento (ex: ao salvar um método, ao fazer um commit). Evolui continuamente junto com o código do projeto. A ser implementada.
+
+A IA consulta as duas juntas: a wiki de base para entender o ambiente Pharo, e a wiki de projeto para entender o que está sendo construído e como evoluiu.
+
+### Itens a implementar
+
+- [ ] **Digest do `.sources` como gatilho** — comparar digest gravado em `_generation.ston` com o digest atual; regenerar wiki de base apenas se diferir
+- [ ] **Regenerar só o que mudou** — salvar digests por classe e pular as inalteradas na próxima geração da wiki de base
+- [ ] **Wiki de projeto via Epicea** — usar `EpMonitor` para capturar mudanças na imagem durante o desenvolvimento; gerar páginas `.md` por classe modificada com histórico de alterações (diff de método, timestamp, contexto)
+- [ ] **Estratégia de atualização da wiki de projeto** — definir gatilho: periódico, por evento (método salvo), ou manual; discutir granularidade do histórico registrado
 
 ---
 
