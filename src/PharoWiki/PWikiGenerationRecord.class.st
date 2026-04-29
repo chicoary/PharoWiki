@@ -7,7 +7,8 @@ Class {
 		'generatedAt',
 		'classCount',
 		'durationSeconds',
-		'outputDir'
+		'outputDir',
+		'classDigests'
 	],
 	#category : 'PharoWiki-Core',
 	#package : 'PharoWiki',
@@ -27,9 +28,10 @@ PWikiGenerationRecord >> initializeOutputDir: aDirectory classCount: aCount star
 	outputDir := aDirectory.
 	classCount := aCount.
 	generatedAt := aDateAndTime.
-	durationSeconds := (DateAndTime now - aDateAndTime) totalSeconds.
+	durationSeconds := (DateAndTime now - aDateAndTime) totalSeconds truncated.
 	sourcesFile := Smalltalk sourcesFile basename.
-	sourcesDigest := self computeDigest
+	sourcesDigest := self computeDigest.
+	classDigests ifNil: [ classDigests := Dictionary new ]
 ]
 
 { #category : 'private' }
@@ -76,7 +78,53 @@ PWikiGenerationRecord >> asDictionary [
 		at: #generatedAt put: generatedAt printString;
 		at: #classCount put: classCount;
 		at: #durationSeconds put: durationSeconds;
+		at: #classDigests put: classDigests;
 		yourself
+]
+
+{ #category : 'instance creation' }
+PWikiGenerationRecord class >> loadFrom: aDirectory [
+	"Load classDigests from an existing _generation.ston in aDirectory.
+	 Returns a new empty Dictionary if the file does not exist or has no classDigests key."
+	| stonFile dict |
+	stonFile := aDirectory / '_generation.ston'.
+	stonFile exists ifFalse: [ ^ Dictionary new ].
+	dict := STON fromString: stonFile contents.
+	^ dict at: #classDigests ifAbsent: [ Dictionary new ]
+]
+
+{ #category : 'digest' }
+PWikiGenerationRecord >> computeDigestForClass: aClass [
+	"Serialize aClass via TonelWriter and SHA256 the result.
+	 Covers methods, comment, variables, and hierarchy."
+	| bytes |
+	bytes := (TonelWriter sourceCodeOf: aClass) utf8Encoded.
+	^ (SHA256 hashMessage: bytes) hex
+]
+
+{ #category : 'digest' }
+PWikiGenerationRecord >> isClassUpToDate: aClass [
+	"Return true if the stored digest matches the current digest of aClass."
+	| stored current |
+	stored := classDigests at: aClass name ifAbsent: [ ^ false ].
+	current := self computeDigestForClass: aClass.
+	^ stored = current
+]
+
+{ #category : 'digest' }
+PWikiGenerationRecord >> recordDigestForClass: aClass [
+	"Compute and store the current digest for aClass."
+	classDigests at: aClass name put: (self computeDigestForClass: aClass)
+]
+
+{ #category : 'accessing' }
+PWikiGenerationRecord >> classDigests [
+	^ classDigests
+]
+
+{ #category : 'accessing' }
+PWikiGenerationRecord >> classDigests: aDictionary [
+	classDigests := aDictionary
 ]
 
 { #category : 'private' }

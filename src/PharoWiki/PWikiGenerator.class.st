@@ -7,7 +7,8 @@ Class {
 		'converter',
 		'extractor',
 		'implementorsCache',
-		'sendersCache'
+		'sendersCache',
+		'generationRecord'
 	],
 	#category : 'PharoWiki-Core',
 	#package : 'PharoWiki',
@@ -50,7 +51,12 @@ PWikiGenerator >> generateClasses: anArrayOfClasses [
 					estimator remainingStringFor: counter of: total }).
 				[ :classJob |
 					classJob title: aClass name.
-					self generateForClass: aClass classJob: classJob
+					(generationRecord isClassUpToDate: aClass)
+						ifTrue: [
+							classJob title: '↷ ', aClass name, ' — skipped' ]
+						ifFalse: [
+							self generateForClass: aClass classJob: classJob.
+							generationRecord recordDigestForClass: aClass ]
 				] asJob min: 0; max: (aClass protocols size max: 1); run ]
 		] asJob min: 0; max: classes size; run ]
 ]
@@ -85,7 +91,7 @@ PWikiGenerator >> generateForImage [
 	 Shows two nested progress bars:
 	   - outer : fixed title anchor
 	   - inner  : current class with overall % and time remaining"
-	| allClasses startTime |
+	| allClasses startTime record |
 	self prepareImplementorsDir.
 	self prepareSendersDir.
 	allClasses := Smalltalk allClasses asArray.
@@ -94,10 +100,12 @@ PWikiGenerator >> generateForImage [
 		outerJob title: 'PharoWiki — generating full image'.
 		self generateClasses: allClasses
 	] asJob run.
-	(PWikiGenerationRecord
+	record := PWikiGenerationRecord
 		outputDir: outputDir
 		classCount: allClasses size
-		startTime: startTime) writeFiles
+		startTime: startTime.
+	record classDigests: generationRecord classDigests.
+	record writeFiles
 ]
 
 { #category : 'generating - public' }
@@ -114,17 +122,24 @@ PWikiGenerator >> generateForPackage: aPackageName [
 { #category : 'generating - public' }
 PWikiGenerator >> generateForPackageNamed: aPackageName [
 	"Generate wiki pages for all classes in one package, with job feedback."
-	| package classes |
+	| package classes record startTime |
 	self prepareImplementorsDir.
 	self prepareSendersDir.
 	package := PackageOrganizer default
 		packageNamed: aPackageName
 		ifAbsent: [ ^ self ].
 	classes := package classes asArray.
+	startTime := DateAndTime now.
 	[ :outerJob |
 		outerJob title: 'PharoWiki — package ', aPackageName.
 		self generateClasses: classes
-	] asJob run
+	] asJob run.
+	record := PWikiGenerationRecord
+		outputDir: outputDir
+		classCount: classes size
+		startTime: startTime.
+	record classDigests: generationRecord classDigests.
+	record writeFiles
 ]
 
 { #category : 'generating - private' }
@@ -187,7 +202,9 @@ PWikiGenerator >> initializeWith: aDirectory [
 	implementorsCache := LRUCache new.
 	implementorsCache maximumWeight: 2000.
 	sendersCache := LRUCache new.
-	sendersCache maximumWeight: 2000
+	sendersCache maximumWeight: 2000.
+	generationRecord := PWikiGenerationRecord new.
+	generationRecord classDigests: (PWikiGenerationRecord loadFrom: aDirectory)
 ]
 
 { #category : 'generating - private' }
