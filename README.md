@@ -1,4 +1,5 @@
 <img width="1032" height="820" alt="Screenshot 2026-04-28 at 18 14 37" src="https://github.com/user-attachments/assets/23b70732-6fba-4a25-a144-7dca9b2969cf" />
+
 # PharoWiki
 
 Wiki navegável gerada a partir do código-fonte do Pharo Smalltalk.
