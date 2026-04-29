@@ -11,6 +11,7 @@
 - **Não economizar tokens em mensagens curtas** — clareza vale mais que brevidade nesses casos.
 - **Perguntar antes de mostrar código** — antes de gerar código para executar, perguntar se o usuário quer ver. Exceção: quando o usuário pede explicitamente.
 - **Scripts referenciados por nome** — ao pedir para executar um script, referenciar pelo nome da seção no `scripts.md`. Exemplo: "Execute **Rodar todos os testes** no Playground do Pharo."
+- **Solicitar o arquivo antes de alterar** — antes de gerar qualquer alteração em uma classe existente, solicitar o arquivo `.class.st` atual via upload. Nunca reconstruir o fonte a partir do contexto ou da memória da sessão.
 - **Correções e implementações sempre entregues como arquivo para download** — ao propor qualquer método novo ou corrigido, sempre gerar o arquivo `.class.st` completo para download. Nunca mostrar só o trecho alterado inline. O código atual já está em `src/`; o arquivo completo é tudo que o usuário precisa para aplicar.
 - **Sem `...` em trechos de código** — nunca usar `...` para indicar "o resto não muda". Mostrar sempre o método completo.
 - **Explicar antes de implementar** — antes de gerar código de uma nova classe ou método significativo, escrever um parágrafo curto explicando responsabilidades, API principal e decisões de design relevantes.
