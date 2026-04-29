@@ -80,7 +80,7 @@ PharoWiki/
 | `PWikiClassPage` | Introspecção de uma classe via reflexão da imagem — instância e classe |
 | `PWikiMethodSection` | Encapsula um método compilado + acesso à AST |
 | `PWikiGenerator` | Orquestra a geração — entry point principal; cache LRU de implementors e senders (maximumWeight: 2000) |
-| `PWikiGenerationRecord` | Grava `_generation.ston` e `_generation.md` ao final de `generateForImage` |
+| `PWikiGenerationRecord` | Grava `_generation.ston` e `_generation.md`; persiste digest por classe (`classDigests`) para geração incremental |
 | `PWikiProgressEstimator` | Estima tempo restante durante geração; mantém `LastRatePerClass` como variável de classe |
 | `PWikiSelectorPageBase` | Classe abstrata — base para páginas de seletor |
 | `PWikiImplementorsPage` | Gera nota `_implementors/` com quem implementa um seletor |
@@ -174,7 +174,7 @@ new: anInteger
 - **Extensions:** renderizadas inline com código, `Sends:` e `Senders` — não apenas listadas por nome
 - **Progresso:** `pkgJob` mostra `NomePacote — N / Total (%)  — ~Xh Ym Zs remaining`; `classJob` mostra nome da classe; `outerJob` título fixo
 - **`PWikiProgressEstimator`** — fallback para `LastRatePerClass` quando estimativa ultrapassa 24h
-- **`PWikiGenerationRecord`** — gerado apenas por `generateForImage`, não por `generateForPackageNamed:`
+- **`PWikiGenerationRecord`** — gerado por `generateForImage` e `generateForPackageNamed:`; persiste `classDigests` no STON para geração incremental; `PWikiGenerator` carrega os digests via `loadFrom:` na inicialização
 - **`asJob`** — `min:` e `max:` em cascata no `asJob`, não dentro do bloco
 - **Cache de implementors e senders:** `LRUCache` (maximumWeight: 2000) em `PWikiGenerator` — `implementorsOf:` e `sendersOf:` consultam o cache antes de delegar ao `PWikiDependencyExtractor`; evita varreduras repetidas via `SystemNavigation` durante geração em volume; tamanho calibrado via benchmark amostral (`bench.script.st`)
 - **Metacello não remove métodos** — ao renomear/remover, apagar manualmente no browser antes de recarregar
@@ -208,4 +208,6 @@ Ver o arquivo ROADMAP.md.
 - `TonelWriter sourceCodeOf: NomeDaClasse` — gera código Tonel de uma classe para compartilhar com a IA
 - `SHA256 hashMessage: bytes` — digest do `.sources`
 - `STON toString: aDictionary` — serialização para `.ston`
+- `TonelWriter sourceCodeOf: aClass` — serializa uma classe completa em Tonel como String; usar para digest por classe (não `TonelWriter on: stream` + `writeClass:`, que espera `MCClassDefinition`)
+- `(DateAndTime now - aDateAndTime) totalSeconds truncated` — `totalSeconds` retorna `Fraction` no Pharo 13; usar `truncated` para converter em `Integer`
 - `ZnBufferedReadStream` não entende `contentsOfEntireFile` — usar `upToEnd`

@@ -29,6 +29,7 @@
 - [x] Extensions no lado classe — verificado com `Boolean`; renderização completa (código inline, `Sends:`, `Senders`)
 - [x] **Cache de implementors e senders** — `LRUCache` (maximumWeight: 2000) em `PWikiGenerator` para `implementorsOf:` e `sendersOf:`, evitando varreduras repetidas via `SystemNavigation` durante geração em volume; tamanho calibrado via benchmark amostral (`bench.script.st`)
 - [x] **Validação em volume** — geração do pacote `Kernel` e da imagem completa (10.655 classes, 112.665 arquivos, 128 MB); qualidade da saída validada
+- [x] **Geração incremental por classe** — `PWikiGenerationRecord` persiste digest por classe via `TonelWriter sourceCodeOf:`; `PWikiGenerator` pula classes não modificadas na segunda passagem; digest de duração corrigido com `truncated`
 
 ---
 
@@ -51,7 +52,7 @@ A IA consulta as duas juntas: a wiki de base para entender o ambiente Pharo, e a
 ### Itens a implementar
 
 - [ ] **Digest do `.sources` como gatilho** — comparar digest gravado em `_generation.ston` com o digest atual; regenerar wiki de base apenas se diferir
-- [ ] **Regenerar só o que mudou** — salvar digests por classe e pular as inalteradas na próxima geração da wiki de base
+- [x] **Regenerar só o que mudou** — salvar digests por classe e pular as inalteradas na próxima geração da wiki de base
 - [ ] **Wiki de projeto via Epicea** — usar `EpMonitor` para capturar mudanças na imagem durante o desenvolvimento; gerar páginas `.md` por classe modificada com histórico de alterações (diff de método, timestamp, contexto)
 - [ ] **Estratégia de atualização da wiki de projeto** — definir gatilho: periódico, por evento (método salvo), ou manual; discutir granularidade do histórico registrado
 

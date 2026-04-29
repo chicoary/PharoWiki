@@ -33,7 +33,7 @@
 - **Git registra estado funcionando** — nunca commitar com testes falhando.
 - **Uma coisa de cada vez** — corrigir um problema por vez, com testes quando aplicável.
 - **Metacello não remove métodos** — ao renomear ou remover um método, o Metacello recarrega o arquivo mas não apaga o método antigo da imagem. Remover manualmente no browser do Pharo antes de recarregar.
-- **Atualizar arquivos de contexto no projeto Claude** — sempre que `ROADMAP.md`, `CONVENTIONS.md` ou `CONTEXT.md` forem modificados, fazer upload das versões atualizadas nos arquivos do projeto PharoWiki no Claude. Isso garante que a próxima sessão começa com contexto correto. A Claude deve lembrar o usuário disso ao final de qualquer sessão que produza mudanças nesses arquivos.
+- **Arquivos de contexto em Project Files** — `CONVENTIONS.md`, `ROADMAP.md` e `CONTEXT.md` estão nos arquivos do projeto PharoWiki no Claude e devem ser mantidos sempre atualizados. Ao final de qualquer sessão que produza mudanças nesses arquivos, a Claude deve lembrar o usuário de atualizar as versões no git root e no Project Files.
 
 ---
 
