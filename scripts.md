@@ -117,7 +117,7 @@ self inform: 'Ok'
 
 ```smalltalk
 | stonFile dict |
-stonFile := '/Users/chicoary/Documents/Obsidian Vaults/CODE Vault/wiki/_generation.ston' asFileReference.
+stonFile := '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/_generation.ston' asFileReference.
 dict := STON fromString: stonFile contents.
 dict
 ```
@@ -126,7 +126,7 @@ dict
 
 ```smalltalk
 | stonFile digests |
-stonFile := '/Users/chicoary/Documents/Obsidian Vaults/CODE Vault/wiki/_generation.ston' asFileReference.
+stonFile := '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/_generation.ston' asFileReference.
 digests := (STON fromString: stonFile contents) at: #classDigests.
 digests
 ```
