@@ -112,3 +112,21 @@ gen := PWikiGenerator outputDir: outputDir.
 gen generateForImage.
 self inform: 'Ok'
 ```
+
+## Materializar generation record
+
+```smalltalk
+| stonFile dict |
+stonFile := '/Users/chicoary/Documents/Obsidian Vaults/CODE Vault/wiki/_generation.ston' asFileReference.
+dict := STON fromString: stonFile contents.
+dict
+```
+
+## Materializar classDigests
+
+```smalltalk
+| stonFile digests |
+stonFile := '/Users/chicoary/Documents/Obsidian Vaults/CODE Vault/wiki/_generation.ston' asFileReference.
+digests := (STON fromString: stonFile contents) at: #classDigests.
+digests
+```
