@@ -15,7 +15,7 @@
 - **Correções e implementações sempre entregues como arquivo para download** — ao propor qualquer método novo ou corrigido, sempre gerar o arquivo `.class.st` completo para download. Nunca mostrar só o trecho alterado inline. O código atual já está em `src/`; o arquivo completo é tudo que o usuário precisa para aplicar.
 - **Sem `...` em trechos de código** — nunca usar `...` para indicar "o resto não muda". Mostrar sempre o método completo.
 - **Explicar antes de implementar** — antes de gerar código de uma nova classe ou método significativo, escrever um parágrafo curto explicando responsabilidades, API principal e decisões de design relevantes.
-- **Avisar antes de qualquer redução de código** — se um arquivo gerado remove métodos, remove trechos de métodos, refatora reduzindo estrutura, ou "encolhe" o código em relação ao original, avisar explicitamente o que foi reduzido e por quê, e pedir aprovação antes de o usuário salvar.
+- **Avisar antes de qualquer redução de conteúdo** — se um arquivo gerado remove métodos, remove trechos de métodos, refatora reduzindo estrutura, ou "encolhe" o conteúdo em relação ao original, avisar explicitamente o que foi reduzido e por quê, e pedir aprovação antes de o usuário salvar. Isso vale para qualquer arquivo modificado, incluindo `.md`.
 
 ---
 
