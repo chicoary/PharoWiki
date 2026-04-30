@@ -20,6 +20,192 @@ PWikiGenerator class >> outputDir: aDirectory [
 	^ self new initializeWith: aDirectory
 ]
 
+{ #category : 'scripts' }
+PWikiGenerator class >> cacheBenchmark [
+	<script>
+	| sizes selectedPackages string |
+
+	"Tamanhos de cache a comparar"
+	sizes := #(50 100 250 500 1000 2000 5000).
+
+	"Selecionar 5 pacotes aleatórios com >= 10 classes"
+	selectedPackages := (PackageOrganizer default packages
+	    select: [ :pkg | pkg classes size >= 10 ])
+	    asSortedCollection: [ :a :b | a name < b name ].
+	selectedPackages := selectedPackages asArray shuffled first: 5.
+
+	Transcript
+	    show: '=== PharoWiki — Cache Benchmark ==='; cr;
+	    show: 'Pacotes: ', (selectedPackages collect: [ :p | p name ]) asString; cr;
+	    show: 'Total de classes: ',
+	        (selectedPackages inject: 0 into: [ :sum :p | sum + p classes size ]) asString; cr;
+	    cr.
+
+	"Cabeçalho da tabela"
+	Transcript
+	    show: ('MaxWeight' padRightTo: 12);
+	    show: ('Hits' padRightTo: 10);
+	    show: ('Misses' padRightTo: 10);
+	    show: ('HitRatio%' padRightTo: 12);
+	    show: ('CacheSize' padRightTo: 12);
+	    cr;
+	    show: (String new: 56 withAll: $-); cr.
+
+	"Rodar ensaio para cada tamanho"
+	[ :outerJob |
+	    outerJob title: 'Cache Benchmark'.
+	    outerJob min: 0; max: sizes size.
+
+	    sizes doWithIndex: [ :maxWeight :sizeIndex |
+	        | cache |
+	        outerJob current: sizeIndex.
+	        outerJob title: 'Cache Benchmark — MaxWeight: ', maxWeight asString.
+
+	        cache := LRUCache new.
+	        cache maximumWeight: maxWeight.
+
+	        [ :innerJob |
+	            innerJob title: 'MaxWeight ', maxWeight asString.
+	            innerJob min: 0; max: selectedPackages size.
+
+	            selectedPackages doWithIndex: [ :pkg :pkgIndex |
+	                innerJob current: pkgIndex.
+	                innerJob title: pkg name.
+
+	                pkg classes do: [ :cls |
+	                    cls methods do: [ :method |
+	                        cache
+	                            at: method selector
+	                            ifAbsentPut: [
+	                                SystemNavigation default allImplementorsOf: method selector ] ] ] ] ]
+	        asJob run.
+
+	        string := (cache hitRatio * 100.0) rounded asString, ' %'.
+
+	        Transcript
+	            show: (maxWeight asString padRightTo: 12);
+	            show: (cache hits asString padRightTo: 10);
+	            show: (cache misses asString padRightTo: 10);
+	            show: (string padRightTo: 12);
+	            show: (cache size asString padRightTo: 12);
+	            cr ] ]
+	asJob run.
+
+	Transcript show: '=== Fim ==='; cr
+]
+
+{ #category : 'scripts' }
+PWikiGenerator class >> generateImage [
+	<script>
+	| gen outputDir |
+	outputDir := '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/' asFileReference.
+	gen := PWikiGenerator outputDir: outputDir.
+	gen generateForImage.
+	Transcript crShow: 'Wiki is ready!'.
+	self inform: 'Ok'
+]
+
+{ #category : 'scripts' }
+PWikiGenerator class >> generatePackagePharoWiki [
+	<script>
+	| gen outputDir |
+	'Começando...' crTrace.
+	outputDir := '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki' asFileReference.
+	gen := PWikiGenerator outputDir: outputDir.
+	gen generateForPackageNamed: 'PharoWiki'.
+	'Pronto!' crTrace.
+	self inform: 'Ok'
+]
+
+{ #category : 'scripts' }
+PWikiGenerator class >> generatePoint [
+	<script>
+	| gen outputDir |
+	DebugTracer default clear.
+	DebugTracer default traces inspect.
+	outputDir := '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/' asFileReference.
+	gen := PWikiGenerator outputDir: outputDir.
+	gen generateForClass: Point.
+	self inform: 'Ok'
+]
+
+{ #category : 'scripts' }
+PWikiGenerator class >> reload [
+	<script>
+	| pharoWikiPath |
+	pharoWikiPath := '/Users/chicoary/Documents/Obsidian Vaults/CODE Vault/1 - Projetos/1 - In progress/PharoWiki/Anexos/PharoWiki'.
+
+	Transcript
+	    clear;
+	    show: '[', DateAndTime now printString, '] Recarregando PharoWiki...'; cr.
+
+	Metacello new
+	    baseline: 'PharoWiki';
+	    repository: 'tonel://', pharoWikiPath, '/src';
+	    load.
+	self inform: 'Ok'
+]
+
+{ #category : 'scripts' }
+PWikiGenerator class >> runAllTests [
+	<script>
+	| result suite |
+
+	Transcript
+	    clear;
+	    cr;
+	    show: '[', DateAndTime now printString, '] Rodando testes...'; cr.
+
+	suite := TestSuite new.
+	suite addTest: PWikiClassPageTest suite.
+	suite addTest: PWikiMethodSectionTest suite.
+	suite addTest: PWikiMicrodownConverterTest suite.
+	suite addTest: PWikiAnchorGeneratorTest suite.
+	suite addTest: PWikiDependencyExtractorTest suite.
+	suite addTest: PWikiFileWriterTest suite.
+	suite addTest: PWikiGeneratorTest suite.
+	suite addTest: PWikiImplementorsPageTest suite.
+	suite addTest: PWikiSendersPageTest suite.
+	suite addTest: PWikiProgressEstimatorTest suite.
+
+	[ :job |
+	    job title: 'Rodando testes PharoWiki'; min: 0; max: 1.
+	    result := suite run.
+	    job currentValue: 1 ] asJob run.
+
+	Transcript
+	    show: result passed size printString, ' passaram'; cr;
+	    show: result failures size printString, ' falharam'; cr;
+	    show: result errors size printString, ' erros'; cr;
+	    show: result skipped size printString, ' pulados'; cr.
+	self inform: 'Ok'
+]
+
+{ #category : 'scripts' }
+PWikiGenerator class >> saveClassTonel [
+	<script>
+	| class className string fileReference |
+	class := String.
+	className := class name.
+	Transcript crShow: 'Exportando a classe: ', className, '...'.
+	Transcript crShow: '[', DateAndTime now printString, ']'; cr.
+	string := TonelWriter sourceCodeOf: class.
+	Transcript crShow: 'Código fonte (truncate):'; cr.
+	Transcript crShow: (string truncateTo: 5000); cr.
+	fileReference := ('{1}.class.st' format: { className }) asFileReference.
+	fileReference writeStreamDo: [ :stream | stream nextPutAll: string ].
+	Transcript crShow: 'Exportação concluída!'.
+	self inform: 'Ok'
+]
+
+{ #category : 'scripts' }
+PWikiGenerator class >> sourceCodeOf [
+	<script>
+	Transcript
+	    clear;
+	    crShow: (TonelWriter sourceCodeOf: PWikiGenerator)
+]
+
 { #category : 'generating - private' }
 PWikiGenerator >> generateClasses: anArrayOfClasses [
 	"Group anArrayOfClasses by package and process each group under a package-level Job.
@@ -372,4 +558,44 @@ PWikiGenerator >> renderPage: aPage classJob: classJobOrNil [
 					stream nextPutAll: '```'; cr ] ] ] ].
 
 	^ stream contents
+]
+
+{ #category : 'scripts' }
+PWikiGenerator >> cacheBenchmark [
+	<script: 'self cacheBenchmark'>
+]
+
+{ #category : 'scripts' }
+PWikiGenerator >> generateImage [
+	<script: 'self generateImage'>
+]
+
+{ #category : 'scripts' }
+PWikiGenerator >> generatePackagePharoWiki [
+	<script: 'self generatePackagePharoWiki'>
+]
+
+{ #category : 'scripts' }
+PWikiGenerator >> generatePoint [
+	<script: 'self generatePoint'>
+]
+
+{ #category : 'scripts' }
+PWikiGenerator >> reload [
+	<script: 'self reload'>
+]
+
+{ #category : 'scripts' }
+PWikiGenerator >> runAllTests [
+	<script: 'self runAllTests'>
+]
+
+{ #category : 'scripts' }
+PWikiGenerator >> saveClassTonel [
+	<script: 'self saveClassTonel'>
+]
+
+{ #category : 'scripts' }
+PWikiGenerator >> sourceCodeOf [
+	<script: 'self sourceCodeOf'>
 ]
