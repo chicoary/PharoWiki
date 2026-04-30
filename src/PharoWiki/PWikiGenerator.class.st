@@ -248,6 +248,12 @@ PWikiGenerator >> generateClasses: anArrayOfClasses [
 ]
 
 { #category : 'generating - public' }
+PWikiGenerator >> classesToGenerate [
+	"Subclasses must override to return the classes to generate."
+	^ self subclassResponsibility
+]
+
+{ #category : 'generating - public' }
 PWikiGenerator >> generateForClass: aClass [
 	"Generate a wiki page for aClass without job feedback."
 	| page content |
@@ -273,14 +279,14 @@ PWikiGenerator >> generateForClass: aClass classJob: classJob [
 
 { #category : 'generating - public' }
 PWikiGenerator >> generateForImage [
-	"Generate wiki pages for all classes in the image.
+	"Generate wiki pages for the classes returned by classesToGenerate.
 	 Shows two nested progress bars:
 	   - outer : fixed title anchor
 	   - inner  : current class with overall % and time remaining"
 	| allClasses startTime record |
 	self prepareImplementorsDir.
 	self prepareSendersDir.
-	allClasses := Smalltalk allClasses asArray.
+	allClasses := self classesToGenerate.
 	startTime := DateAndTime now.
 	[ :outerJob |
 		outerJob title: 'PharoWiki — generating full image'.
