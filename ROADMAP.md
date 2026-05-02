@@ -60,6 +60,7 @@ A IA consulta as duas juntas: a wiki de base para entender o ambiente Pharo, e a
 
 ## Ideias futuras
 
+- [ ] Pacotes carregados podem ser marcados como "intocáveis" apesar de estarem na parte associada ao .changes
 - [ ] **Índice por pacote** — gerar `index.md` para cada pacote com lista de classes
 - [ ] **Índice global** — `index.md` na raiz com todos os pacotes
 - [ ] **PharoWiki como contexto para a IA** — usar as páginas `.md` geradas como contexto em vez de copiar código Tonel manualmente

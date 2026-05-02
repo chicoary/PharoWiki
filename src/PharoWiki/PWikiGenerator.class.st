@@ -1,3 +1,4 @@
+
 Class {
 	#name : 'PWikiGenerator',
 	#superclass : 'Object',
@@ -14,11 +15,6 @@ Class {
 	#package : 'PharoWiki',
 	#tag : 'Core'
 }
-
-{ #category : 'instance creation' }
-PWikiGenerator class >> outputDir: aDirectory [
-	^ self new initializeWith: aDirectory
-]
 
 { #category : 'scripts' }
 PWikiGenerator class >> cacheBenchmark [
@@ -95,38 +91,119 @@ PWikiGenerator class >> cacheBenchmark [
 ]
 
 { #category : 'scripts' }
-PWikiGenerator class >> generateImage [
+PWikiGenerator class >> generateChangesWiki [
 	<script>
 	| gen outputDir |
-	outputDir := '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/' asFileReference.
-	gen := PWikiGenerator outputDir: outputDir.
+	outputDir := '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/changes/' asFileReference.
+	gen := PWikiChangesGenerator outputDir: outputDir.
 	gen generateForImage.
-	Transcript crShow: 'Wiki is ready!'.
+	Transcript crShow: 'Changes wiki is ready!'.
 	self inform: 'Ok'
 ]
 
 { #category : 'scripts' }
-PWikiGenerator class >> generatePackagePharoWiki [
+PWikiGenerator class >> generateClass [
 	<script>
-	| gen outputDir |
-	'Começando...' crTrace.
-	outputDir := '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki' asFileReference.
-	gen := PWikiGenerator outputDir: outputDir.
-	gen generateForPackageNamed: 'PharoWiki'.
-	'Pronto!' crTrace.
+	| class outputDir gen |
+	class := Point.
+	outputDir := (self generatorClassFor: class) = PWikiSourcesGenerator
+		ifTrue: [ '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/sources/' ]
+		ifFalse: [ '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/changes/' ].
+	gen := (self generatorClassFor: class) outputDir: outputDir asFileReference.
+	gen generateForClass: class.
 	self inform: 'Ok'
 ]
 
 { #category : 'scripts' }
-PWikiGenerator class >> generatePoint [
+PWikiGenerator class >> generatePackage [
+	<script>
+	| packageName package firstClass outputDir gen |
+	packageName := 'PharoWiki'.
+	package := PackageOrganizer default
+		packageNamed: packageName
+		ifAbsent: [ ^ self inform: 'Package not found' ].
+	firstClass := package classes
+		ifEmpty: [ ^ self inform: 'Package has no classes' ]
+		ifNotEmpty: [ :classes | classes first ].
+	outputDir := (self generatorClassFor: firstClass) = PWikiSourcesGenerator
+		ifTrue: [ '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/sources/' ]
+		ifFalse: [ '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/changes/' ].
+	gen := (self generatorClassFor: firstClass) outputDir: outputDir asFileReference.
+	gen generateForPackageNamed: packageName.
+	self inform: 'Ok'
+]
+
+{ #category : 'scripts' }
+PWikiGenerator class >> generateSourcesWiki [
 	<script>
 	| gen outputDir |
-	DebugTracer default clear.
-	DebugTracer default traces inspect.
-	outputDir := '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/' asFileReference.
-	gen := PWikiGenerator outputDir: outputDir.
-	gen generateForClass: Point.
+	outputDir := '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/sources/' asFileReference.
+	gen := PWikiSourcesGenerator outputDir: outputDir.
+	gen generateForImage.
+	Transcript crShow: 'Sources wiki is ready!'.
 	self inform: 'Ok'
+]
+
+{ #category : 'scripts' }
+PWikiGenerator class >> generateWikis [
+	<script>
+	| sourcesDir changesDir sourcesGen changesGen allClasses startTime estimator gen |
+	sourcesDir := '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/sources/' asFileReference.
+	changesDir := '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/changes/' asFileReference.
+	sourcesGen := PWikiSourcesGenerator outputDir: sourcesDir.
+	changesGen := PWikiChangesGenerator outputDir: changesDir.
+	sourcesGen prepareImplementorsDir.
+	sourcesGen prepareSendersDir.
+	changesGen prepareImplementorsDir.
+	changesGen prepareSendersDir.
+	allClasses := Smalltalk allClasses asArray.
+	startTime := DateAndTime now.
+	estimator := PWikiProgressEstimator start.
+	[ :outerJob |
+		outerJob title: 'PharoWiki — generating wikis'.
+		allClasses doWithIndex: [ :aClass :i |
+			outerJob currentValue: i.
+			outerJob title: ('PharoWiki — {1} / {2} ({3}%){4}' format: {
+				i. allClasses size. i * 100 // allClasses size.
+				estimator remainingStringFor: i of: allClasses size }).
+			gen := self generatorFor: aClass sourcesGen: sourcesGen changesGen: changesGen.
+			(gen generationRecord isClassUpToDate: aClass)
+				ifFalse: [
+					gen generateForClass: aClass.
+					gen generationRecord recordDigestForClass: aClass ] ]
+	] asJob min: 0; max: allClasses size; run.
+	sourcesGen writeGenerationRecord: allClasses size startTime: startTime.
+	changesGen writeGenerationRecord: allClasses size startTime: startTime.
+	Transcript crShow: 'Both wikis are ready!'.
+	self inform: 'Ok'
+]
+
+{ #category : 'private' }
+PWikiGenerator class >> generatorClassFor: aClass [
+	"Return the generator class appropriate for aClass based on its origin.
+	 Classes registered in Epicea were added via .changes; others come from .sources."
+	^ (EpMonitor current log entries
+		anySatisfy: [ :e |
+			(e content isKindOf: EpClassAddition)
+			and: [ e content classAdded realClass = aClass ] ])
+		ifTrue: [ PWikiChangesGenerator ]
+		ifFalse: [ PWikiSourcesGenerator ]
+]
+
+{ #category : 'private' }
+PWikiGenerator class >> generatorFor: aClass sourcesGen: sourcesGen changesGen: changesGen [
+	"Return the appropriate generator for aClass based on its origin."
+	^ (EpMonitor current log entries
+		anySatisfy: [ :e |
+			(e content isKindOf: EpClassAddition)
+			and: [ e content classAdded realClass = aClass ] ])
+		ifTrue: [ changesGen ]
+		ifFalse: [ sourcesGen ]
+]
+
+{ #category : 'instance creation' }
+PWikiGenerator class >> outputDir: aDirectory [
+	^ self new initializeWith: aDirectory
 ]
 
 { #category : 'scripts' }
@@ -185,13 +262,11 @@ PWikiGenerator class >> runAllTests [
 PWikiGenerator class >> saveClassTonel [
 	<script>
 	| class className string fileReference |
-	class := String.
+	class := PWikiGenerator.
 	className := class name.
 	Transcript crShow: 'Exportando a classe: ', className, '...'.
 	Transcript crShow: '[', DateAndTime now printString, ']'; cr.
 	string := TonelWriter sourceCodeOf: class.
-	Transcript crShow: 'Código fonte (truncate):'; cr.
-	Transcript crShow: (string truncateTo: 5000); cr.
 	fileReference := ('{1}.class.st' format: { className }) asFileReference.
 	fileReference writeStreamDo: [ :stream | stream nextPutAll: string ].
 	Transcript crShow: 'Exportação concluída!'.
@@ -206,10 +281,29 @@ PWikiGenerator class >> sourceCodeOf [
 	    crShow: (TonelWriter sourceCodeOf: PWikiGenerator)
 ]
 
+{ #category : 'scripts' }
+PWikiGenerator >> cacheBenchmark [
+	<script: 'self cacheBenchmark'>
+]
+
+{ #category : 'generating - public' }
+PWikiGenerator >> classesToGenerate [
+	"Subclasses must override to return the classes to generate."
+	^ self subclassResponsibility
+]
+
+{ #category : 'scripts' }
+PWikiGenerator >> generateChangesWiki [
+	<script: 'self generateChangesWiki'>
+]
+
+{ #category : 'scripts' }
+PWikiGenerator >> generateClass [
+	<script: 'self generateClass'>
+]
+
 { #category : 'generating - private' }
 PWikiGenerator >> generateClasses: anArrayOfClasses [
-	"Group anArrayOfClasses by package and process each group under a package-level Job.
-	 Progress % and time remaining appear in the package-level job title."
 	| byPackage counter total estimator |
 	total := anArrayOfClasses size.
 	estimator := PWikiProgressEstimator start.
@@ -245,12 +339,6 @@ PWikiGenerator >> generateClasses: anArrayOfClasses [
 							generationRecord recordDigestForClass: aClass ]
 				] asJob min: 0; max: (aClass protocols size max: 1); run ]
 		] asJob min: 0; max: classes size; run ]
-]
-
-{ #category : 'generating - public' }
-PWikiGenerator >> classesToGenerate [
-	"Subclasses must override to return the classes to generate."
-	^ self subclassResponsibility
 ]
 
 { #category : 'generating - public' }
@@ -346,6 +434,11 @@ PWikiGenerator >> generateImplementorsPageFor: aSelector [
 	writer writeSelectorPage: page
 ]
 
+{ #category : 'scripts' }
+PWikiGenerator >> generatePackage [
+	<script: 'self generatePackage'>
+]
+
 { #category : 'generating - private' }
 PWikiGenerator >> generateSendersPageFor: aSelector [
 	"Generate the senders note for aSelector.
@@ -358,14 +451,24 @@ PWikiGenerator >> generateSendersPageFor: aSelector [
 	writer writeSenderPage: page
 ]
 
-{ #category : 'accessing' }
-PWikiGenerator >> implementorsCache [
-	^ implementorsCache
+{ #category : 'scripts' }
+PWikiGenerator >> generateSourcesWiki [
+	<script: 'self generateSourcesWiki'>
+]
+
+{ #category : 'scripts' }
+PWikiGenerator >> generateWikis [
+	<script: 'self generateWikis'>
 ]
 
 { #category : 'accessing' }
-PWikiGenerator >> sendersCache [
-	^ sendersCache
+PWikiGenerator >> generationRecord [
+	^ generationRecord
+]
+
+{ #category : 'accessing' }
+PWikiGenerator >> implementorsCache [
+	^ implementorsCache
 ]
 
 { #category : 'private' }
@@ -374,14 +477,6 @@ PWikiGenerator >> implementorsOf: aSelector [
 	^ implementorsCache
 		at: aSelector
 		ifAbsentPut: [ extractor implementorsOf: aSelector ]
-]
-
-{ #category : 'private' }
-PWikiGenerator >> sendersOf: aSelector [
-	"Return the senders of aSelector, consulting the cache first."
-	^ sendersCache
-		at: aSelector
-		ifAbsentPut: [ extractor sendersOf: aSelector ]
 ]
 
 { #category : 'initialization' }
@@ -419,6 +514,11 @@ PWikiGenerator >> prepareSendersDir [
 	dir createDirectory
 ]
 
+{ #category : 'scripts' }
+PWikiGenerator >> reload [
+	<script: 'self reload'>
+]
+
 { #category : 'rendering' }
 PWikiGenerator >> renderPage: aPage [
 	"Render a PWikiClassPage as a Markdown string (no job feedback)."
@@ -450,7 +550,6 @@ PWikiGenerator >> renderPage: aPage classJob: classJobOrNil [
 
 	aPage protocolNames do: [ :protocol |
 		| methods |
-		DebugTracer default add: protocol labeled: #protocol.
 		protocolIndex := protocolIndex + 1.
 		classJobOrNil ifNotNil: [ classJobOrNil currentValue: protocolIndex ].
 		methods := aPage methodsInProtocol: protocol.
@@ -567,31 +666,6 @@ PWikiGenerator >> renderPage: aPage classJob: classJobOrNil [
 ]
 
 { #category : 'scripts' }
-PWikiGenerator >> cacheBenchmark [
-	<script: 'self cacheBenchmark'>
-]
-
-{ #category : 'scripts' }
-PWikiGenerator >> generateImage [
-	<script: 'self generateImage'>
-]
-
-{ #category : 'scripts' }
-PWikiGenerator >> generatePackagePharoWiki [
-	<script: 'self generatePackagePharoWiki'>
-]
-
-{ #category : 'scripts' }
-PWikiGenerator >> generatePoint [
-	<script: 'self generatePoint'>
-]
-
-{ #category : 'scripts' }
-PWikiGenerator >> reload [
-	<script: 'self reload'>
-]
-
-{ #category : 'scripts' }
 PWikiGenerator >> runAllTests [
 	<script: 'self runAllTests'>
 ]
@@ -601,7 +675,32 @@ PWikiGenerator >> saveClassTonel [
 	<script: 'self saveClassTonel'>
 ]
 
+{ #category : 'accessing' }
+PWikiGenerator >> sendersCache [
+	^ sendersCache
+]
+
+{ #category : 'private' }
+PWikiGenerator >> sendersOf: aSelector [
+	"Return the senders of aSelector, consulting the cache first."
+	^ sendersCache
+		at: aSelector
+		ifAbsentPut: [ extractor sendersOf: aSelector ]
+]
+
 { #category : 'scripts' }
 PWikiGenerator >> sourceCodeOf [
 	<script: 'self sourceCodeOf'>
+]
+
+{ #category : 'generating - public' }
+PWikiGenerator >> writeGenerationRecord: aClassCount startTime: aStartTime [
+	"Write _generation.ston and _generation.md for this generator's outputDir."
+	| record |
+	record := PWikiGenerationRecord
+		outputDir: outputDir
+		classCount: aClassCount
+		startTime: aStartTime.
+	record classDigests: generationRecord classDigests.
+	record writeFiles
 ]
