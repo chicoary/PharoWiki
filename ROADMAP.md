@@ -13,12 +13,14 @@
 - [x] `PWikiAnchorGenerator` — gera âncoras Markdown seguras para seletores
 - [x] `PWikiDependencyExtractor` — extrai implementors, senders e referências via `SystemNavigation`
 - [x] `PWikiFileWriter` — escreve `.md` no sistema de arquivos, idempotente
-- [x] `PWikiGenerator` — orquestra a geração com Jobs aninhados para progresso visual
-- [x] `PWikiGenerationRecord` — grava `_generation.ston` e `_generation.md` ao final de `generateForImage`
+- [x] `PWikiGenerator` — superclasse abstrata; orquestra a geração com Jobs aninhados para progresso visual; scripts no class side
+- [x] `PWikiGenerationRecord` — grava `_generation.ston` e `_generation.md`; persiste digest por classe para geração incremental
 - [x] `PWikiProgressEstimator` — estima tempo restante; mantém `LastRatePerClass` como variável de classe
 - [x] `PWikiSelectorPageBase` — classe base para páginas de navegação por seletor
 - [x] `PWikiImplementorsPage` — nota `_implementors/` com quem implementa um seletor
 - [x] `PWikiSendersPage` — nota `_senders/` com quem envia um seletor
+- [x] `PWikiSourcesGenerator` — subclasse de `PWikiGenerator`; gera wiki das classes do `.sources` via Epicea
+- [x] `PWikiChangesGenerator` — subclasse de `PWikiGenerator`; gera wiki das classes do `.changes` via Epicea
 - [x] Links Obsidian (`[[ClassName]]`) em herança, subclasses e `Sends:`
 - [x] Blocos de código com tag `smalltalk` nos comentários de classe
 - [x] Tratamento defensivo de blocos de código não fechados
@@ -27,15 +29,18 @@
 - [x] Geração incremental simples: `writeSelectorPage:` e `writeSenderPage:` pulam se arquivo já existe
 - [x] Extensions navegáveis no lado instância com código, `Sends:` e `Senders`
 - [x] Extensions no lado classe — verificado com `Boolean`; renderização completa (código inline, `Sends:`, `Senders`)
-- [x] **Cache de implementors e senders** — `LRUCache` (maximumWeight: 2000) em `PWikiGenerator` para `implementorsOf:` e `sendersOf:`, evitando varreduras repetidas via `SystemNavigation` durante geração em volume; tamanho calibrado via benchmark amostral (`bench.script.st`)
-- [x] **Validação em volume** — geração do pacote `Kernel` e da imagem completa (10.655 classes, 112.665 arquivos, 128 MB); qualidade da saída validada
-- [x] **Geração incremental por classe** — `PWikiGenerationRecord` persiste digest por classe via `TonelWriter sourceCodeOf:`; `PWikiGenerator` pula classes não modificadas na segunda passagem; digest de duração corrigido com `truncated`
+- [x] **Cache de implementors e senders** — `LRUCache` (maximumWeight: 2000) em `PWikiGenerator`; tamanho calibrado via `cacheBenchmark`
+- [x] **Validação em volume** — geração do pacote `Kernel` e da imagem completa (10.657 classes); qualidade da saída validada
+- [x] **Geração incremental por classe** — `PWikiGenerationRecord` persiste digest por classe; `PWikiGenerator` pula classes não modificadas; digest de duração corrigido com `truncated`
+- [x] **Scripts no class side** — todos os scripts operacionais em `PWikiGenerator class` com `<script>`; instance side espelha para conveniência
+- [x] **Duas wikis separadas** — `wiki/sources/` e `wiki/changes/`; separação por Epicea; `generateWikis` gera as duas em passagem única com geração incremental; 4 minutos na segunda passagem contra ~2h na primeira
 
 ---
 
 ## Próximos passos
 
-- [ ] **Duas wikis para apoio à IA** — ver seção abaixo
+- [ ] **Fazer merge do branch `feature/generate-wikis` para `main`**
+- [ ] **Digest do `.sources` como gatilho** — comparar digest gravado em `_generation.ston` com o digest atual; regenerar wiki de base apenas se diferir
 
 ---
 
@@ -43,18 +48,17 @@
 
 A IA precisa de duas camadas de contexto para apoiar codificação efetiva num projeto Pharo:
 
-**Wiki de base** — gerada a partir do `.sources` via reflexão da imagem. Representa o Pharo "de fábrica". Regenerada apenas quando o digest do `.sources` muda — ou seja, quando se atualiza a versão do Pharo. Estável, raramente muda. Já implementada.
+**Wiki do `.sources`** — gerada a partir do `.sources` via reflexão da imagem. Representa o Pharo "de fábrica". Regenerada apenas quando o digest do `.sources` muda. Estável, raramente muda. Implementada via `PWikiSourcesGenerator`.
 
-**Wiki de projeto** — gerada via Epicea (`EpMonitor`), capturando as mudanças feitas durante o desenvolvimento do projeto naquela imagem. Atualizada periodicamente ou por evento (ex: ao salvar um método, ao fazer um commit). Evolui continuamente junto com o código do projeto. A ser implementada.
+**Wiki do `.changes`** — gerada via Epicea (`EpMonitor`), capturando as classes adicionadas ao projeto naquela imagem. Atualizada sempre que `generateWikis` é executado. Evolui continuamente junto com o código do projeto. Implementada via `PWikiChangesGenerator`.
 
-A IA consulta as duas juntas: a wiki de base para entender o ambiente Pharo, e a wiki de projeto para entender o que está sendo construído e como evoluiu.
+A IA consulta as duas juntas: a wiki do `.sources` para entender o ambiente Pharo, e a wiki do `.changes` para entender o que está sendo construído.
 
 ### Itens a implementar
 
-- [ ] **Digest do `.sources` como gatilho** — comparar digest gravado em `_generation.ston` com o digest atual; regenerar wiki de base apenas se diferir
-- [x] **Regenerar só o que mudou** — salvar digests por classe e pular as inalteradas na próxima geração da wiki de base
-- [ ] **Wiki de projeto via Epicea** — usar `EpMonitor` para capturar mudanças na imagem durante o desenvolvimento; gerar páginas `.md` por classe modificada com histórico de alterações (diff de método, timestamp, contexto)
-- [ ] **Estratégia de atualização da wiki de projeto** — definir gatilho: periódico, por evento (método salvo), ou manual; discutir granularidade do histórico registrado
+- [ ] **Digest do `.sources` como gatilho** — comparar digest gravado em `_generation.ston` com o digest atual; regenerar wiki do `.sources` apenas se diferir
+- [x] **Regenerar só o que mudou** — salvar digests por classe e pular as inalteradas na próxima geração
+- [ ] **Wiki do `.changes` com histórico via Epicea** — além de listar as classes atuais, capturar histórico de modificações de métodos (`EpMethodModification`) com timestamp e contexto
 
 ---
 
