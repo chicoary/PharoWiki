@@ -34,13 +34,13 @@
 - [x] **Geração incremental por classe** — `PWikiGenerationRecord` persiste digest por classe; `PWikiGenerator` pula classes não modificadas; digest de duração corrigido com `truncated`
 - [x] **Scripts no class side** — todos os scripts operacionais em `PWikiGenerator class` com `<script>`; instance side espelha para conveniência
 - [x] **Duas wikis separadas** — `wiki/sources/` e `wiki/changes/`; separação por Epicea; `generateWikis` gera as duas em passagem única com geração incremental; 4 minutos na segunda passagem contra ~2h na primeira
+- [x] **Merge do branch `feature/generate-wikis` para `main`**
 
 ---
 
 ## Próximos passos
 
-- [ ] **Fazer merge do branch `feature/generate-wikis` para `main`**
-- [ ] **Digest do `.sources` como gatilho** — comparar digest gravado em `_generation.ston` com o digest atual; regenerar wiki de base apenas se diferir
+- [ ] **Digest do `.sources` como gatilho** — comparar digest gravado em `_generation.ston` com o digest atual; regenerar wiki do `.sources` apenas se diferir
 
 ---
 
