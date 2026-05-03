@@ -147,15 +147,37 @@ PWikiGenerator class >> generateSourcesWiki [
 { #category : 'scripts' }
 PWikiGenerator class >> generateWikis [
 	<script>
-	| sourcesDir changesDir sourcesGen changesGen allClasses startTime estimator gen |
+	self generateWikis: false
+]
+
+{ #category : 'scripts' }
+PWikiGenerator class >> generateWikis: ignoreSourcesDigest [
+	"Generate both wikis in a single pass.
+	 If ignoreSourcesDigest is false and the .sources digest has not changed,
+	 skip the sources wiki entirely.
+	 If ignoreSourcesDigest is true, skip the digest check and regenerate
+	 sources classes normally — only classes whose per-class digest changed
+	 will be written."
+	| sourcesDir changesDir sourcesGen changesGen allClasses startTime estimator gen
+	  savedSourcesDigest currentSourcesDigest skipSources |
 	sourcesDir := '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/sources/' asFileReference.
 	changesDir := '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/changes/' asFileReference.
 	sourcesGen := PWikiSourcesGenerator outputDir: sourcesDir.
 	changesGen := PWikiChangesGenerator outputDir: changesDir.
-	sourcesGen prepareImplementorsDir.
-	sourcesGen prepareSendersDir.
+
+	skipSources := ignoreSourcesDigest not and: [
+		savedSourcesDigest := PWikiGenerationRecord loadSourcesDigestFrom: sourcesDir.
+		currentSourcesDigest := PWikiGenerationRecord new computeDigest.
+		savedSourcesDigest = currentSourcesDigest ].
+
+	skipSources
+		ifTrue: [ Transcript crShow: 'Sources wiki is up to date — skipping.' ]
+		ifFalse: [
+			sourcesGen prepareImplementorsDir.
+			sourcesGen prepareSendersDir ].
 	changesGen prepareImplementorsDir.
 	changesGen prepareSendersDir.
+
 	allClasses := Smalltalk allClasses asArray.
 	startTime := DateAndTime now.
 	estimator := PWikiProgressEstimator start.
@@ -167,12 +189,15 @@ PWikiGenerator class >> generateWikis [
 				i. allClasses size. i * 100 // allClasses size.
 				estimator remainingStringFor: i of: allClasses size }).
 			gen := self generatorFor: aClass sourcesGen: sourcesGen changesGen: changesGen.
-			(gen generationRecord isClassUpToDate: aClass)
-				ifFalse: [
-					gen generateForClass: aClass.
-					gen generationRecord recordDigestForClass: aClass ] ]
+			(skipSources and: [ gen == sourcesGen ]) ifFalse: [
+				(gen generationRecord isClassUpToDate: aClass)
+					ifFalse: [
+						gen generateForClass: aClass.
+						gen generationRecord recordDigestForClass: aClass ] ] ]
 	] asJob min: 0; max: allClasses size; run.
-	sourcesGen writeGenerationRecord: allClasses size startTime: startTime.
+
+	skipSources ifFalse: [
+		sourcesGen writeGenerationRecord: allClasses size startTime: startTime ].
 	changesGen writeGenerationRecord: allClasses size startTime: startTime.
 	Transcript crShow: 'Both wikis are ready!'.
 	self inform: 'Ok'

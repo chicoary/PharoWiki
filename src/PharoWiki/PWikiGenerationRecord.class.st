@@ -27,6 +27,17 @@ PWikiGenerationRecord class >> loadFrom: aDirectory [
 ]
 
 { #category : 'instance creation' }
+PWikiGenerationRecord class >> loadSourcesDigestFrom: aDirectory [
+	"Load the sourcesDigest from an existing _generation.ston in aDirectory.
+	 Returns nil if the file does not exist or has no sourcesDigest key."
+	| stonFile dict |
+	stonFile := aDirectory / '_generation.ston'.
+	stonFile exists ifFalse: [ ^ nil ].
+	dict := STON fromString: stonFile contents.
+	^ dict at: #sourcesDigest ifAbsent: [ nil ]
+]
+
+{ #category : 'instance creation' }
 PWikiGenerationRecord class >> outputDir: aDirectory classCount: aCount startTime: aDateAndTime [
 	^ self new
 		initializeOutputDir: aDirectory
