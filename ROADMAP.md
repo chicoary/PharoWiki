@@ -35,12 +35,13 @@
 - [x] **Scripts no class side** — todos os scripts operacionais em `PWikiGenerator class` com `<script>`; instance side espelha para conveniência
 - [x] **Duas wikis separadas** — `wiki/sources/` e `wiki/changes/`; separação por Epicea; `generateWikis` gera as duas em passagem única com geração incremental; 4 minutos na segunda passagem contra ~2h na primeira
 - [x] **Merge do branch `feature/generate-wikis` para `main`**
+- [x] **Digest do `.sources` como gatilho** — `generateWikis:` compara o digest gravado em `_generation.ston` com o digest atual do `.sources`; se forem iguais, pula toda a geração do sources
 
 ---
 
 ## Próximos passos
 
-- [ ] **Digest do `.sources` como gatilho** — comparar digest gravado em `_generation.ston` com o digest atual; regenerar wiki do `.sources` apenas se diferir
+- [ ] Pacotes carregados podem ser marcados como "intocáveis" apesar de estarem na parte associada ao .changes
 
 ---
 
@@ -50,21 +51,20 @@ A IA precisa de duas camadas de contexto para apoiar codificação efetiva num p
 
 **Wiki do `.sources`** — gerada a partir do `.sources` via reflexão da imagem. Representa o Pharo "de fábrica". Regenerada apenas quando o digest do `.sources` muda. Estável, raramente muda. Implementada via `PWikiSourcesGenerator`.
 
-**Wiki do `.changes`** — gerada via Epicea (`EpMonitor`), capturando as classes adicionadas ao projeto naquela imagem. Atualizada sempre que `generateWikis` é executado. Evolui continuamente junto com o código do projeto. Implementada via `PWikiChangesGenerator`.
+**Wiki do `.changes`** — gerada via Epicea (`EpMonitor`), capturando as classes adicionadas ao projeto naquela imagem. Atualizada sempre que `generateWikis` é executado pelo desenvolvedor, que sabe quando a wiki precisa refletir o estado atual para apoiar a IA. Evolui continuamente junto com o código do projeto. Implementada via `PWikiChangesGenerator`.
 
 A IA consulta as duas juntas: a wiki do `.sources` para entender o ambiente Pharo, e a wiki do `.changes` para entender o que está sendo construído.
 
-### Itens a implementar
+### Itens implementados
 
-- [ ] **Digest do `.sources` como gatilho** — comparar digest gravado em `_generation.ston` com o digest atual; regenerar wiki do `.sources` apenas se diferir
+- [x] **Digest do `.sources` como gatilho** — comparar digest gravado em `_generation.ston` com o digest atual; regenerar wiki do `.sources` apenas se diferir
 - [x] **Regenerar só o que mudou** — salvar digests por classe e pular as inalteradas na próxima geração
-- [ ] **Wiki do `.changes` com histórico via Epicea** — além de listar as classes atuais, capturar histórico de modificações de métodos (`EpMethodModification`) com timestamp e contexto
 
 ---
 
 ## Ideias futuras
 
-- [ ] Pacotes carregados podem ser marcados como "intocáveis" apesar de estarem na parte associada ao .changes
+- [ ] **Wiki do `.changes` com histórico via Epicea** — além de listar as classes atuais, capturar histórico de modificações de métodos (`EpMethodModification`) com timestamp e contexto
 - [ ] **Índice por pacote** — gerar `index.md` para cada pacote com lista de classes
 - [ ] **Índice global** — `index.md` na raiz com todos os pacotes
 - [ ] **PharoWiki como contexto para a IA** — usar as páginas `.md` geradas como contexto em vez de copiar código Tonel manualmente
