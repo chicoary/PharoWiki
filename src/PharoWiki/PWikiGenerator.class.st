@@ -158,12 +158,15 @@ PWikiGenerator class >> generateWikis: ignoreSourcesDigest [
 	 If ignoreSourcesDigest is true, skip the digest check and regenerate
 	 sources classes normally — only classes whose per-class digest changed
 	 will be written."
-	| sourcesDir changesDir sourcesGen changesGen allClasses startTime estimator gen
+	| sourcesDir changesDir registry
+	  allClasses startTime estimator gen
 	  savedSourcesDigest currentSourcesDigest skipSources |
+
 	sourcesDir := '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/sources/' asFileReference.
 	changesDir := '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/changes/' asFileReference.
-	sourcesGen := PWikiSourcesGenerator outputDir: sourcesDir.
-	changesGen := PWikiChangesGenerator outputDir: changesDir.
+	registry := PWikiGeneratorRegistry
+		sourcesGen: (PWikiSourcesGenerator outputDir: sourcesDir)
+		changesGen: (PWikiChangesGenerator outputDir: changesDir).
 
 	skipSources := ignoreSourcesDigest not and: [
 		savedSourcesDigest := PWikiGenerationRecord loadSourcesDigestFrom: sourcesDir.
@@ -172,15 +175,13 @@ PWikiGenerator class >> generateWikis: ignoreSourcesDigest [
 
 	skipSources
 		ifTrue: [ Transcript crShow: 'Sources wiki is up to date — skipping.' ]
-		ifFalse: [
-			sourcesGen prepareImplementorsDir.
-			sourcesGen prepareSendersDir ].
-	changesGen prepareImplementorsDir.
-	changesGen prepareSendersDir.
+		ifFalse: [ self prepareDirectoriesFor: { registry sourcesGen } ].
+	self prepareDirectoriesFor: { registry changesGen }.
 
 	allClasses := Smalltalk allClasses asArray.
 	startTime := DateAndTime now.
 	estimator := PWikiProgressEstimator start.
+
 	[ :outerJob |
 		outerJob title: 'PharoWiki — generating wikis'.
 		allClasses doWithIndex: [ :aClass :i |
@@ -188,8 +189,8 @@ PWikiGenerator class >> generateWikis: ignoreSourcesDigest [
 			outerJob title: ('PharoWiki — {1} / {2} ({3}%){4}' format: {
 				i. allClasses size. i * 100 // allClasses size.
 				estimator remainingStringFor: i of: allClasses size }).
-			gen := self generatorFor: aClass sourcesGen: sourcesGen changesGen: changesGen.
-			(skipSources and: [ gen == sourcesGen ]) ifFalse: [
+			gen := registry generatorFor: aClass.
+			(skipSources and: [ gen == registry sourcesGen ]) ifFalse: [
 				(gen generationRecord isClassUpToDate: aClass)
 					ifFalse: [
 						gen generateForClass: aClass.
@@ -197,8 +198,13 @@ PWikiGenerator class >> generateWikis: ignoreSourcesDigest [
 	] asJob min: 0; max: allClasses size; run.
 
 	skipSources ifFalse: [
-		sourcesGen writeGenerationRecord: allClasses size startTime: startTime ].
-	changesGen writeGenerationRecord: allClasses size startTime: startTime.
+		self writeRecordsFor: { registry sourcesGen }
+			classCount: allClasses size
+			startTime: startTime ].
+	self writeRecordsFor: { registry changesGen }
+		classCount: allClasses size
+		startTime: startTime.
+
 	Transcript crShow: 'Both wikis are ready!'.
 	self inform: 'Ok'
 ]
@@ -206,7 +212,8 @@ PWikiGenerator class >> generateWikis: ignoreSourcesDigest [
 { #category : 'private' }
 PWikiGenerator class >> generatorClassFor: aClass [
 	"Return the generator class appropriate for aClass based on its origin.
-	 Classes registered in Epicea were added via .changes; others come from .sources."
+	 Classes registered in Epicea were added via .changes; others come from .sources.
+	 Note: for bulk generation use PWikiGeneratorRegistry instead."
 	^ (EpMonitor current log entries
 		anySatisfy: [ :e |
 			(e content isKindOf: EpClassAddition)
@@ -217,18 +224,24 @@ PWikiGenerator class >> generatorClassFor: aClass [
 
 { #category : 'private' }
 PWikiGenerator class >> generatorFor: aClass sourcesGen: sourcesGen changesGen: changesGen [
-	"Return the appropriate generator for aClass based on its origin."
-	^ (EpMonitor current log entries
-		anySatisfy: [ :e |
-			(e content isKindOf: EpClassAddition)
-			and: [ e content classAdded realClass = aClass ] ])
-		ifTrue: [ changesGen ]
-		ifFalse: [ sourcesGen ]
+	"Deprecated — use PWikiGeneratorRegistry >> generatorFor: instead."
+	^ (PWikiGeneratorRegistry
+		sourcesGen: sourcesGen
+		changesGen: changesGen)
+		generatorFor: aClass
 ]
 
 { #category : 'instance creation' }
 PWikiGenerator class >> outputDir: aDirectory [
 	^ self new initializeWith: aDirectory
+]
+
+{ #category : 'private' }
+PWikiGenerator class >> prepareDirectoriesFor: aCollectionOfGenerators [
+	"Prepare _implementors and _senders directories for each generator."
+	aCollectionOfGenerators do: [ :gen |
+		gen prepareImplementorsDir.
+		gen prepareSendersDir ]
 ]
 
 { #category : 'scripts' }
@@ -266,6 +279,7 @@ PWikiGenerator class >> runAllTests [
 	suite addTest: PWikiDependencyExtractorTest suite.
 	suite addTest: PWikiFileWriterTest suite.
 	suite addTest: PWikiGeneratorTest suite.
+	suite addTest: PWikiGeneratorRegistryTest suite.
 	suite addTest: PWikiImplementorsPageTest suite.
 	suite addTest: PWikiSendersPageTest suite.
 	suite addTest: PWikiProgressEstimatorTest suite.
@@ -304,6 +318,13 @@ PWikiGenerator class >> sourceCodeOf [
 	Transcript
 	    clear;
 	    crShow: (TonelWriter sourceCodeOf: PWikiGenerator)
+]
+
+{ #category : 'private' }
+PWikiGenerator class >> writeRecordsFor: aCollectionOfGenerators classCount: aClassCount startTime: aStartTime [
+	"Write _generation.ston and _generation.md for each generator."
+	aCollectionOfGenerators do: [ :gen |
+		gen writeGenerationRecord: aClassCount startTime: aStartTime ]
 ]
 
 { #category : 'scripts' }
