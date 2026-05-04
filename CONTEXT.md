@@ -9,7 +9,7 @@
 
 Wiki navegável gerada a partir do código-fonte do Pharo Smalltalk, inspirada na abordagem de Karpathy com Obsidian + Claude Code. O gerador usa reflexão da imagem Pharo para produzir arquivos `.md` por classe, organizados por pacote, com links navegáveis no formato Obsidian.
 
-Duas wikis são geradas: uma associada ao `.sources` (classes do Pharo base) e outra ao `.changes` (classes adicionadas ao projeto). A separação é feita via Epicea (`EpMonitor`).
+Três wikis são geradas: uma associada ao `.sources` (classes do Pharo base), uma ao `.changes` (classes do projeto), e uma ao `.changes` (bibliotecas externas). A separação entre projeto e libs é declarada em `BaselineOfPharoWiki >> projectPackageNames`.
 
 ---
 
@@ -19,7 +19,6 @@ Duas wikis são geradas: uma associada ao `.sources` (classes do Pharo base) e o
 - **Local:** `/Users/chicoary/Documents/Obsidian Vaults/CODE Vault/1 - Projetos/1 - In progress/PharoWiki/Anexos/PharoWiki`
 - **Wiki:** `/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki`
 - **Branch principal:** `main`
-- **Branch em progresso:** `feature/generate-wikis`
 
 ---
 
@@ -58,6 +57,8 @@ PharoWiki/
         ├── PWikiSendersPage.class.st            (tag: Core)
         ├── PWikiSourcesGenerator.class.st       (tag: Core)
         ├── PWikiChangesGenerator.class.st       (tag: Core)
+        ├── PWikiGeneratorRegistry.class.st      (tag: Core)
+        ├── PWikiLibsGenerator.class.st          (tag: Core)
         ├── PWikiMicrodownConverter.class.st     (tag: Extractors)
         ├── PWikiAnchorGenerator.class.st        (tag: Extractors)
         ├── PWikiDependencyExtractor.class.st    (tag: Extractors)
@@ -69,6 +70,8 @@ PharoWiki/
         ├── PWikiDependencyExtractorTest.class.st(tag: Tests)
         ├── PWikiFileWriterTest.class.st         (tag: Tests)
         ├── PWikiGeneratorTest.class.st          (tag: Tests)
+        ├── PWikiGeneratorRegistryTest.class.st  (tag: Tests)
+        ├── PWikiLibsGeneratorTest.class.st      (tag: Tests)
         ├── PWikiImplementorsPageTest.class.st   (tag: Tests)
         ├── PWikiSendersPageTest.class.st        (tag: Tests)
         └── PWikiProgressEstimatorTest.class.st  (tag: Tests)
@@ -86,7 +89,13 @@ PharoWiki vault/wiki/
 │   ├── _implementors/
 │   ├── _senders/
 │   └── (pacotes e classes)
-└── changes/    ← PWikiChangesGenerator — classes adicionadas via .changes
+├── changes/    ← PWikiChangesGenerator — classes do projeto (declaradas na baseline)
+│   ├── _generation.ston
+│   ├── _generation.md
+│   ├── _implementors/
+│   ├── _senders/
+│   └── (pacotes e classes)
+└── libs/       ← PWikiLibsGenerator — bibliotecas externas carregadas via .changes
     ├── _generation.ston
     ├── _generation.md
     ├── _implementors/
@@ -111,7 +120,9 @@ PharoWiki vault/wiki/
 | `PWikiImplementorsPage` | Gera nota `_implementors/` com quem implementa um seletor |
 | `PWikiSendersPage` | Gera nota `_senders/` com quem envia um seletor |
 | `PWikiSourcesGenerator` | Subclasse de `PWikiGenerator` — gera wiki das classes do `.sources` |
-| `PWikiChangesGenerator` | Subclasse de `PWikiGenerator` — gera wiki das classes do `.changes` |
+| `PWikiChangesGenerator` | Subclasse de `PWikiGenerator` — gera wiki das classes do projeto via Epicea |
+| `PWikiGeneratorRegistry` | Decide qual gerador usar para cada classe — sources, changes ou libs |
+| `PWikiLibsGenerator` | Subclasse de `PWikiChangesGenerator` — gera wiki das bibliotecas externas em `wiki/libs/` |
 
 ### Extractors
 
@@ -136,8 +147,9 @@ Todos os scripts estão no class side de `PWikiGenerator` com `<script>` e são 
 | Script | Descrição |
 |--------|-----------|
 | `reload` | Recarrega o pacote via Metacello |
+| `reloadAndTest` | Recarrega o pacote e roda todos os testes em sequência |
 | `runAllTests` | Roda a suíte completa de testes |
-| `generateWikis` | Gera as duas wikis (sources e changes) em passagem única |
+| `generateWikis` | Gera as três wikis (sources, changes e libs) em passagem única |
 | `generateSourcesWiki` | Gera só a wiki do `.sources` |
 | `generateChangesWiki` | Gera só a wiki do `.changes` |
 | `generateClass` | Gera a página de uma classe (detecta a wiki automaticamente) |
@@ -150,7 +162,7 @@ Todos os scripts estão no class side de `PWikiGenerator` com `<script>` e são 
 
 ## Estado dos testes
 
-**62 passando, 0 falhas, 0 erros, 5 pulados** (última verificação: maio 2026)
+**71 passando, 0 falhas, 0 erros, 6 pulados** (última verificação: maio 2026)
 
 ---
 
@@ -210,16 +222,25 @@ new: anInteger
 
 ## Decisões arquiteturais
 
-- **Duas wikis:** `sources/` para classes do `.sources` (Pharo base), `changes/` para classes adicionadas via `.changes`; separação via Epicea (`EpMonitor current log entries`, `EpClassAddition`)
+- **Três wikis:** `sources/` para classes do `.sources` (Pharo base), `changes/` para classes do projeto, `libs/` para bibliotecas externas carregadas via `.changes`; separação projeto/libs declarada em `BaselineOfPharoWiki >> projectPackageNames`
+- **Fronteira projeto vs libs:** código desenvolvido ativamente nesta imagem vai para `changes/`; dependências carregadas via Metacello vão para `libs/`. A linha divisória é o ato de carregar — se você escreveu o código, é do projeto; se o Metacello trouxe como dependência, é lib.
+- **`BaselineOfPharoWiki >> projectPackageNames`** — método com papel duplo: (1) lista pacotes para carregamento Metacello; (2) declara fronteira para o `PWikiChangesGenerator`. Pacotes listados aqui vão para `changes/`, os demais para `libs/`. Ao criar um novo pacote do projeto, adicionar aqui antes de recarregar.
+- **`PWikiChangesGenerator >> projectPackageNames`** — delega para `BaselineOfPharoWiki new projectPackageNames`
+- **`PWikiChangesGenerator >> isProjectPackage:`** — predicado que separa projeto de libs
+- **`PWikiLibsGenerator >> classesToGenerate`** — mesmo source do Epicea que `PWikiChangesGenerator`, mas usa `reject:` em vez de `select:`
+- **`PWikiGeneratorRegistry`** — encapsula a decisão de qual gerador usar; `generatorFor:` consulta Epicea e depois `isProjectPackage:` para decidir entre `changesGen` e `libsGen`
+- **`PWikiGenerator class >> prepareDirectoriesFor:`** — prepara `_implementors` e `_senders` para coleção de geradores
+- **`PWikiGenerator class >> writeRecordsFor:classCount:startTime:`** — grava `_generation` para coleção de geradores
+- **`generatorFor:sourcesGen:changesGen:`** — deprecated; substituído pelo `PWikiGeneratorRegistry`
+- **Trigger Epicea não distingue projeto de libs** — `e tags at: #trigger` retorna `EpMonticelloVersionsLoad` tanto para classes do projeto (carregadas via reload) quanto para bibliotecas externas. Não é utilizável como heurística automática de separação — investigado e descartado.
 - **`PWikiGenerator >> classesToGenerate`** — abstrato (`subclassResponsibility`); subclasses definem quais classes gerar
 - **`PWikiSourcesGenerator >> classesToGenerate`** — rejeita classes registradas no Epicea; retorna classes do `.sources`
-- **`PWikiChangesGenerator >> classesToGenerate`** — retorna classes registradas no Epicea como `EpClassAddition`
+- **`PWikiChangesGenerator >> classesToGenerate`** — retorna classes registradas no Epicea como `EpClassAddition` que pertencem ao projeto
 - **`EpClassAddition >> classAdded realClass`** — retorna a classe viva a partir da definição Ring
-- **`generateWikis`** — itera `Smalltalk allClasses`, delega cada classe ao gerador correto via `generatorFor:sourcesGen:changesGen:`; grava digests incrementalmente; uma passagem só para as duas wikis
-- **`generatorFor:sourcesGen:changesGen:`** — método auxiliar no class side de `PWikiGenerator`; elimina comparação de classes no loop
-- **`generatorClassFor:`** — retorna a classe do gerador para uso nos scripts `generateClass` e `generatePackage`
+- **`generateWikis`** — itera `Smalltalk allClasses`, delega cada classe ao registry; grava digests incrementalmente; uma passagem só para as três wikis
+- **`generatorClassFor:`** — retorna a classe do gerador para uso nos scripts `generateClass` e `generatePackage`; consulta `PWikiChangesGenerator new isProjectPackage:` para distinguir changes de libs
 - **`writeGenerationRecord:startTime:`** — método de instância exposto para uso pelo `generateWikis`
-- **`generationRecord`** — accessor público em `PWikiGenerator` (via Pull Up de `PWikiSourcesGenerator`)
+- **`generationRecord`** — accessor público em `PWikiGenerator`
 - **Geração incremental:** `PWikiGenerationRecord` persiste digest por classe; `generateWikis` pula classes não modificadas; `_generation.ston` gravado em cada pasta
 - **Formato de saída:** um `.md` por classe, `##` por protocolo de instância, `## Class methods` para lado classe, `## Extensions` para extensões de instância
 - **Entrada:** reflexão da imagem Pharo — não parseia `.sources`/`.changes` diretamente
@@ -270,3 +291,4 @@ Ver o arquivo ROADMAP.md.
 - `EpMonitor current log entries` — log do Epicea; entradas do tipo `EpClassAddition` identificam classes adicionadas após criação da imagem
 - `e content classAdded realClass` — retorna a classe viva a partir de uma entrada `EpClassAddition`
 - `(e content isKindOf: EpClassAddition)` — testa o tipo de uma entrada do Epicea
+- `e tags at: #trigger` — retorna referência à entrada que disparou a adição; para classes carregadas via Metacello o trigger é `EpMonticelloVersionsLoad`; não utilizável para distinguir projeto de libs pois o reload do próprio projeto também gera `EpMonticelloVersionsLoad`
