@@ -108,7 +108,10 @@ PWikiGenerator class >> generateClass [
 	class := Point.
 	outputDir := (self generatorClassFor: class) = PWikiSourcesGenerator
 		ifTrue: [ '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/sources/' ]
-		ifFalse: [ '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/changes/' ].
+		ifFalse: [
+			(self generatorClassFor: class) = PWikiChangesGenerator
+				ifTrue: [ '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/changes/' ]
+				ifFalse: [ '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/libs/' ] ].
 	gen := (self generatorClassFor: class) outputDir: outputDir asFileReference.
 	gen generateForClass: class.
 	self inform: 'Ok'
@@ -127,7 +130,10 @@ PWikiGenerator class >> generatePackage [
 		ifNotEmpty: [ :classes | classes first ].
 	outputDir := (self generatorClassFor: firstClass) = PWikiSourcesGenerator
 		ifTrue: [ '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/sources/' ]
-		ifFalse: [ '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/changes/' ].
+		ifFalse: [
+			(self generatorClassFor: firstClass) = PWikiChangesGenerator
+				ifTrue: [ '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/changes/' ]
+				ifFalse: [ '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/libs/' ] ].
 	gen := (self generatorClassFor: firstClass) outputDir: outputDir asFileReference.
 	gen generateForPackageNamed: packageName.
 	self inform: 'Ok'
@@ -152,21 +158,23 @@ PWikiGenerator class >> generateWikis [
 
 { #category : 'scripts' }
 PWikiGenerator class >> generateWikis: ignoreSourcesDigest [
-	"Generate both wikis in a single pass.
+	"Generate all three wikis in a single pass.
+	 sources/ — Pharo base classes (.sources)
+	 changes/ — project classes (.changes, declared in baseline)
+	 libs/    — external library classes (.changes, not in baseline)
 	 If ignoreSourcesDigest is false and the .sources digest has not changed,
-	 skip the sources wiki entirely.
-	 If ignoreSourcesDigest is true, skip the digest check and regenerate
-	 sources classes normally — only classes whose per-class digest changed
-	 will be written."
-	| sourcesDir changesDir registry
+	 skip the sources wiki entirely."
+	| sourcesDir changesDir libsDir registry
 	  allClasses startTime estimator gen
 	  savedSourcesDigest currentSourcesDigest skipSources |
 
 	sourcesDir := '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/sources/' asFileReference.
 	changesDir := '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/changes/' asFileReference.
+	libsDir    := '/Users/chicoary/Documents/Obsidian Vaults/PharoWiki vault/wiki/libs/' asFileReference.
 	registry := PWikiGeneratorRegistry
 		sourcesGen: (PWikiSourcesGenerator outputDir: sourcesDir)
-		changesGen: (PWikiChangesGenerator outputDir: changesDir).
+		changesGen: (PWikiChangesGenerator outputDir: changesDir)
+		libsGen:    (PWikiLibsGenerator    outputDir: libsDir).
 
 	skipSources := ignoreSourcesDigest not and: [
 		savedSourcesDigest := PWikiGenerationRecord loadSourcesDigestFrom: sourcesDir.
@@ -176,7 +184,7 @@ PWikiGenerator class >> generateWikis: ignoreSourcesDigest [
 	skipSources
 		ifTrue: [ Transcript crShow: 'Sources wiki is up to date — skipping.' ]
 		ifFalse: [ self prepareDirectoriesFor: { registry sourcesGen } ].
-	self prepareDirectoriesFor: { registry changesGen }.
+	self prepareDirectoriesFor: { registry changesGen. registry libsGen }.
 
 	allClasses := Smalltalk allClasses asArray.
 	startTime := DateAndTime now.
@@ -201,25 +209,29 @@ PWikiGenerator class >> generateWikis: ignoreSourcesDigest [
 		self writeRecordsFor: { registry sourcesGen }
 			classCount: allClasses size
 			startTime: startTime ].
-	self writeRecordsFor: { registry changesGen }
+	self writeRecordsFor: { registry changesGen. registry libsGen }
 		classCount: allClasses size
 		startTime: startTime.
 
-	Transcript crShow: 'Both wikis are ready!'.
+	Transcript crShow: 'All three wikis are ready!'.
 	self inform: 'Ok'
 ]
 
 { #category : 'private' }
 PWikiGenerator class >> generatorClassFor: aClass [
 	"Return the generator class appropriate for aClass based on its origin.
-	 Classes registered in Epicea were added via .changes; others come from .sources.
+	 Classes not in Epicea come from .sources.
+	 Classes in Epicea go to PWikiChangesGenerator if in project packages,
+	 PWikiLibsGenerator otherwise.
 	 Note: for bulk generation use PWikiGeneratorRegistry instead."
-	^ (EpMonitor current log entries
+	(EpMonitor current log entries
 		anySatisfy: [ :e |
 			(e content isKindOf: EpClassAddition)
 			and: [ e content classAdded realClass = aClass ] ])
+		ifFalse: [ ^ PWikiSourcesGenerator ].
+	^ (PWikiChangesGenerator new isProjectPackage: aClass)
 		ifTrue: [ PWikiChangesGenerator ]
-		ifFalse: [ PWikiSourcesGenerator ]
+		ifFalse: [ PWikiLibsGenerator ]
 ]
 
 { #category : 'private' }
@@ -243,12 +255,6 @@ PWikiGenerator class >> prepareDirectoriesFor: aCollectionOfGenerators [
 		gen prepareImplementorsDir.
 		gen prepareSendersDir ]
 ]
-
-{ #category : 'scripts' }
-reloadAndTest [
-	<script: 'self reload; runAllTests'>
-]
-
 
 { #category : 'scripts' }
 PWikiGenerator class >> reload [
@@ -286,6 +292,7 @@ PWikiGenerator class >> runAllTests [
 	suite addTest: PWikiFileWriterTest suite.
 	suite addTest: PWikiGeneratorTest suite.
 	suite addTest: PWikiGeneratorRegistryTest suite.
+	suite addTest: PWikiLibsGeneratorTest suite.
 	suite addTest: PWikiImplementorsPageTest suite.
 	suite addTest: PWikiSendersPageTest suite.
 	suite addTest: PWikiProgressEstimatorTest suite.
@@ -569,6 +576,11 @@ PWikiGenerator >> prepareSendersDir [
 { #category : 'scripts' }
 PWikiGenerator >> reload [
 	<script: 'self reload'>
+]
+
+{ #category : 'scripts' }
+PWikiGenerator >> reloadAndTest [
+	<script: 'self reload; runAllTests'>
 ]
 
 { #category : 'rendering' }

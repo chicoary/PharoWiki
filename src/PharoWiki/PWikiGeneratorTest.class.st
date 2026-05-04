@@ -13,7 +13,7 @@ Class {
 { #category : 'running' }
 PWikiGeneratorTest >> setUp [
 	outputDir := FileSystem memory root.
-	generator := PWikiGenerator outputDir: outputDir
+	generator := PWikiSourcesGenerator outputDir: outputDir
 ]
 
 { #category : 'tests - rendering' }
@@ -23,7 +23,7 @@ PWikiGeneratorTest >> testExtensionsNotDuplicated [
 	 Then the Extensions section appears exactly once"
 	| gen page content occurrences |
 	self skip.
-	gen := PWikiGenerator outputDir: FileSystem memory root.
+	gen := PWikiSourcesGenerator outputDir: FileSystem memory root.
 	page := PWikiClassPage forClass: Point.
 	content := gen renderPage: page.
 	occurrences := 0.
@@ -44,24 +44,24 @@ PWikiGeneratorTest >> testGenerateForPackage [
 
 { #category : 'tests - file generation' }
 PWikiGeneratorTest >> testGeneratePointExtensionsSection [
-	"Given a PWikiGenerator writing to a memory filesystem
+	"Given a PWikiSourcesGenerator writing to a memory filesystem
 	 When generating the Point class page
-	 Then the file ends with the Extensions section without duplicates"
+	 Then the file ends with the Extensions section containing *Geometry methods"
 	| gen outputDir content expected |
 	self skip.
 	outputDir := FileSystem memory root.
-	gen := PWikiGenerator outputDir: outputDir.
+	gen := PWikiSourcesGenerator outputDir: outputDir.
 	gen generateForClass: Point.
 	content := (outputDir / 'Kernel' / 'Point.md') contents.
 	expected := String streamContents: [ :s |
 		s
-			nextPutAll: '## Extensions'; cr;
-			nextPutAll: '- `*Math-Operations-Extensions`'; cr;
-			nextPutAll: '- `*STON-Core`'; cr;
-			nextPutAll: '- `*Graphics-Display Objects`'; cr;
-			nextPutAll: '- `*Morphic-Core`'; cr;
-			nextPutAll: '- `*Fuel-Core`'; cr;
-			nextPutAll: '- `*Geometry`'; cr ].
+			nextPutAll: '#### asGVector'; cr;
+			nextPutAll: '**Sends:** [[x_y_ implementors|x:y:]], [[coordinates_ implementors|coordinates:]]'; cr;
+			nextPutAll: '[[asGVector senders|Senders]]'; cr;
+			nextPutAll: '```smalltalk'; cr;
+			nextPutAll: 'asGVector'; cr;
+			nextPutAll: '	^ GVector coordinates: (G2DCoordinates x: x y: y)'; cr;
+			nextPutAll: '```'; cr ].
 	self assert: (content last: expected size) equals: expected
 ]
 
