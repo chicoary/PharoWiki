@@ -44,8 +44,9 @@
 
 ## Próximos passos
 
-- [ ] Escrever o `CLAUDE.md` — instruções para o Claude Code sobre as fronteiras das três wikis
+- [ ] Escrever o `CLAUDE.md` — instruções para o Claude Code sobre as fronteiras das três wikis e o fluxo de desenvolvimento
 - [ ] Documentar o fluxo completo de desenvolvimento assistido por IA em `CONVENTIONS.md`
+- [ ] Explorar a área de `stage/` — pasta onde o Claude Code deposita código proposto em Tonel para revisão antes de ingestão
 
 ---
 
@@ -61,13 +62,40 @@ O PharoWiki está emergindo como mais do que um gerador de wiki — é a infraes
 | `wiki/libs/` | `.changes` — bibliotecas externas | Contexto — só leitura |
 | `wiki/changes/` | `.changes` — código do projeto | Contexto e edição |
 
-O `CLAUDE.md` instrui o Claude Code sobre essas fronteiras: consulte as três wikis, mas só modifique código cujas classes estão em `changes/`.
+O `CLAUDE.md` instrui o Claude Code sobre essas fronteiras: consulte as três wikis, mas só proponha código para `stage/`.
 
 ### A baseline como declaração de intenção
 
 `BaselineOfPharoWiki >> projectPackageNames` é a fonte de verdade sobre o que é "meu projeto". Pacotes listados aqui vão para `changes/`; os demais vão para `libs/`. Criar um pacote novo sem atualizar este método faz ele aparecer em `libs/` na próxima geração — feedback imediato de que algo está fora do fluxo.
 
 **Regra:** código desenvolvido ativamente → `changes/`; dependência carregada via Metacello → `libs/`.
+
+### O fluxo completo com Claude Code
+
+```
+wiki/ (contexto)
+  └── sources/   ← Pharo de fábrica
+  └── changes/   ← código do projeto
+  └── libs/      ← dependências
+
+       ↓ Claude Code lê as três wikis
+
+stage/ (propostas da IA)
+  └── NomeDoPacote/
+      └── NovaClasse.class.st   ← código Tonel proposto
+
+       ↓ desenvolvedor revisa e move para src/
+
+src/ (código do projeto)
+  └── PharoWiki/
+      └── NovaClasse.class.st
+
+       ↓ recarregar pacote + gerar wikis
+
+wiki/changes/ atualizado
+```
+
+A IA não edita `src/` diretamente — propõe em `stage/`. O desenvolvedor revisa, ajusta se necessário, e ingere via Metacello. Após a ingestão, `generateWikis` atualiza o contexto para a próxima sessão.
 
 ### Tensão com a cultura Smalltalk
 
@@ -116,3 +144,4 @@ A IA consulta as três juntas: `sources/` para entender o ambiente Pharo, `chang
 - [ ] **Índice de classes** — nota `_index.md` com lista alfabética de todas as classes do vault, gerada pelo `PWikiGenerator`
 - [ ] **Queries Dataview para navegação** — notas especiais com queries dinâmicas: classes por pacote, classes mais referenciadas, cruzamento senders/implementors; explorar antes de investir em código de geração
 - [ ] **Documentar configuração do Obsidian** — ao usar o vault PharoWiki, desativar "Enable Inline Queries" nas configurações do plugin DataView; código Smalltalk com seletores começando com `=` (como `==`) conflita com o parser de inline queries do DataView no Live Preview
+- [ ] **MCP Server para Pharo** — explorar alternativa às wikis via MCP Server conectado diretamente à imagem Pharo por reflexão; vantagem: dinâmico e sempre atual; desvantagem: menos previsível e auditável que wikis estáticas
