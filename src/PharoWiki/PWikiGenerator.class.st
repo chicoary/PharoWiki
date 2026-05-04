@@ -245,6 +245,12 @@ PWikiGenerator class >> prepareDirectoriesFor: aCollectionOfGenerators [
 ]
 
 { #category : 'scripts' }
+reloadAndTest [
+	<script: 'self reload; runAllTests'>
+]
+
+
+{ #category : 'scripts' }
 PWikiGenerator class >> reload [
 	<script>
 	| pharoWikiPath |
